@@ -1,0 +1,29 @@
+{
+  "name": "social-app",
+  "version": "1.0.0",
+  "description": "An API using Node.js/ Express.js and mongoDB/ mongoose",
+  "main": "server.js",
+  "scripts": {
+    "start": "nodemon server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AhmedElgaidi/Social-media-app.git"
+  },
+  "keywords": [
+    "node.js",
+    "express.js",
+    "mongoDB",
+    "mongoose",
+    "authentication",
+    "api",
+    "restfulAPI",
+    "JWT"
+  ],
+  "author": "Ahmed Elgaidi",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/AhmedElgaidi/Social-media-app/issues"
+  },
+  "homepage": "https://github.com/AhmedElgaidi/Social-media-app#readme"
+}
