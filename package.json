@@ -4,7 +4,8 @@
   "description": "An API using Node.js/ Express.js and mongoDB/ mongoose",
   "main": "server.js",
   "scripts": {
-    "start": "nodemon server.js"
+    "start:dev": "NODE_ENV=development nodemon server.js",
+    "start:prod": "NODE_ENV=production nodemon server.js"
   },
   "repository": {
     "type": "git",
@@ -25,5 +26,12 @@
   "bugs": {
     "url": "https://github.com/AhmedElgaidi/Social-media-app/issues"
   },
-  "homepage": "https://github.com/AhmedElgaidi/Social-media-app#readme"
+  "homepage": "https://github.com/AhmedElgaidi/Social-media-app#readme",
+  "dependencies": {
+    "body-parser": "^1.20.0",
+    "dotenv": "^16.0.1",
+    "express": "^4.18.1",
+    "mongoose": "^6.3.6",
+    "nodemon": "^2.0.16"
+  }
 }
