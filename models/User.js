@@ -29,7 +29,7 @@ const userSchema = new Schema(
         last: {
           type: String,
           trim: true,
-        }
+        },
       },
       user_name: {
         type: String,
@@ -38,22 +38,6 @@ const userSchema = new Schema(
         // required: [true, "Please, provide us with your username!"],
         trim: true,
       },
-      email_list: [
-        {
-          email: {
-            type: String,
-            trim: true,
-          },
-          is_secondary: {
-            type: Boolean,
-            default: false,
-          },
-          is_verified: {
-            type: Boolean,
-            default: false,
-          },
-        }
-      ],
       age: {
         type: Number,
       },
@@ -100,7 +84,41 @@ const userSchema = new Schema(
       },
     },
     account: {
+      password: {
+        type: String,
+        trim: true
+      },
+      tokens_list: [{
+        access_token: {
+          type: String,
+          is_Active: {
+            type: Boolean,
+            default: true
+          }
+        },
+        refresh_token: {},
+        device_info: {
+
+        }
+      }]
     },
+    email_list: [
+      {
+        _id: false, // To prevent creating id field for sub-documents
+        email: {
+          type: String,
+          trim: true,
+        },
+        is_secondary: {
+          type: Boolean,
+          default: false,
+        },
+        is_verified: {
+          type: Boolean,
+          default: false,
+        },
+      },
+    ],
   },
   schemaOptions
 );

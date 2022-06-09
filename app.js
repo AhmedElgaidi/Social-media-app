@@ -6,7 +6,8 @@ const express = require("express");
 // var bodyParser = require("body-parser");
 
 // (3) custom modules
-const userRoutes = require("./routes/user/user.routes");
+const authRoutes = require('./routes/auth.routes');
+const userRoutes = require('./routes/user.routes');
 
 //======================================================================
 
@@ -20,7 +21,8 @@ const app = express();
 app.use(express.json({ limit: '20mb' }));
 
 // My routes
-app.use("/api/v1/users/", userRoutes);
+app.use("/api/v1", userRoutes);
+app.use("/api/v1/auth", authRoutes);
 
 //======================================================================
 
