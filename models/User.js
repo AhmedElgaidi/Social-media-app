@@ -1,3 +1,4 @@
+const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
 
 // ================================================
@@ -34,8 +35,8 @@ const userSchema = new Schema(
       user_name: {
         type: String,
         index: true,
-        // unique: [true, "Sorry, It's already taken!"],
-        // required: [true, "Please, provide us with your username!"],
+        unique: [true, "Sorry, It's already taken!"],
+        required: [true, "Please, provide us with your username!"],
         trim: true,
       },
       age: {
@@ -86,21 +87,27 @@ const userSchema = new Schema(
     account: {
       password: {
         type: String,
-        trim: true
+        trim: true,
       },
-      tokens_list: [{
-        access_token: {
-          type: String,
-          is_Active: {
-            type: Boolean,
-            default: true
-          }
+      tokens_list: [
+        {
+          access_token: {
+            type: String,
+            is_Active: {
+              type: Boolean,
+              default: true,
+            },
+          },
+          refresh_token: {
+            type: String,
+            is_Active: {
+              type: Boolean,
+              default: true,
+            },
+          },
+          device_info: {},
         },
-        refresh_token: {},
-        device_info: {
-
-        }
-      }]
+      ],
     },
     email_list: [
       {
@@ -122,6 +129,34 @@ const userSchema = new Schema(
   },
   schemaOptions
 );
+
+// =================================================
+// Our hooks (middlewares)
+
+// =================================================
+// Our methods
+userSchema.methods.generateAndSignAccessAndRefreshTokens = function () {
+  // (1) Generate access token
+  const access_token = jwt.sign(
+    { _id: this.id },
+    process.env.ACCESS_TOKEN_SECRET,
+    {
+      expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN,
+    }
+  );
+
+  // (2) Generate refresh token
+  const refresh_token = jwt.sign(this.id, process.env.REFRESH_TOKEN_SECRET, {
+    expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN,
+  });
+
+  // (3) Assign tokens to user document
+  this.account.tokens_list.push({
+    access_token,
+    refresh_token,
+  });
+  console.log(this);
+};
 
 // ==================================================
 // Let's export our created model
