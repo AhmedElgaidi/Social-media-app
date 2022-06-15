@@ -35,3 +35,15 @@ app.use(returnError);
 //======================================================================
 
 module.exports = app;
+
+const test = {
+    name: 'test',
+    method: () => {
+        console.log('test')
+    }
+}
+// sdfs 
+// sd
+// f
+// ssdf
+test.method();
