@@ -2,7 +2,7 @@
 const User = require("../models/User");
 
 const catchAsyncErrors = require("../errors/catchAsyncErrors");
-const BaseError = require('../errors/BaseError');
+const BaseError = require("../errors/BaseError");
 
 //======================================================================
 
@@ -14,34 +14,25 @@ const signUp_GET = (req, res, next) => {
 };
 
 const signUp_POST = async (req, res, next) => {
-  // (1) Get credentials
-  const { email, password, user_name } = req.body;
-  // (2) check there existence
-  if (!email || !password) {
-    // return next(new ErrorHandler("Please, send your credentials", 404));
-  throw new BaseError('Invalid input', 'Please send your email, password and username', 422, true);
+  // Get user data
+  const { first_name, last_name, user_name, email, password } = req.body;
 
-  }
-  // throw new BaseError('test name', 'test value', 400, true);
-  // (3) Validate credentials
-  // TODO:
-  // (4) Sanitize credentials
-  // TODO:
-
-  // (5`) Create user account
+  // Create user document (validate and sanitize on schema level)
   const user = await User.create({
     info: {
-      user_name
+      name: {
+        first: first_name,
+        last: last_name,
+      },
+      user_name,
     },
-    email_list: {
-      email,
-    },
+    email_list: [{ email }],
     account: {
       password,
     },
   });
 
-  // (5) Notify frontend with the status
+  // Notify frontend with the status
   res.status(201).json({
     status: "Success",
     message: "User created successfully",

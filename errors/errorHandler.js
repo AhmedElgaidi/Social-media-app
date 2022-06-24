@@ -1,10 +1,9 @@
 const logger = require("./logger");
 const BaseError = require("./BaseError");
-const otherErrorScenarios  = require('./otherErrorScenarios')
 
 const logError = (error) => {
   error.description = error.message;
-  logger.error({...error});
+  logger.error({ ...error });
 };
 
 const logErrorMiddleware = (error, req, res, next) => {
@@ -25,6 +24,7 @@ const returnError = (error, req, res, next) => {
   if (isOperationalError(error)) {
     const name = error.name,
       description = error.message;
+      
     res.status(error.statusCode).send({
       name,
       description,
