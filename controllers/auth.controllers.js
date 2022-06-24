@@ -15,7 +15,14 @@ const signUp_GET = (req, res, next) => {
 
 const signUp_POST = async (req, res, next) => {
   // (1) Get user data
-  const { first_name, last_name, user_name, email, password } = req.body;
+  const {
+    first_name,
+    last_name,
+    user_name,
+    email,
+    password,
+    confirm_password,
+  } = req.body;
 
   // (2) Create user document
   const user = new User({
@@ -36,22 +43,35 @@ const signUp_POST = async (req, res, next) => {
           device: { name: "abc" },
         },
       ],
-      password,
+      password: {
+        password,
+        confirm_password,
+      },
       email_list: [{ email }],
     },
   });
 
   // (3) Validate and sanitize: Did on schema level
 
+  // (4) User document would be saved if everything is okay
   await user.save();
-  // (5) Notify frontend with the status
+
+  // (5) send him email with account verification token
+  TODO:
+
+  // (6) Notify frontend with the status
   res.status(201).json({
     status: "Success",
-    message: "User created successfully",
+    message:
+      "User created successfully, check your mail box to verify your account",
     data: {
       user,
     },
   });
+};
+
+const verifyAccount_POST = (req, res, next) => {
+  
 };
 
 const login_GET = (req, res, next) => {
@@ -104,6 +124,7 @@ const login_POST = async (req, res, next) => {
 module.exports = {
   signUp_GET,
   signUp_POST,
+  verifyAccount_POST,
   login_GET,
   login_POST,
 };

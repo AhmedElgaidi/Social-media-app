@@ -1,9 +1,10 @@
 module.exports = (error, req, res, next) => {
   // (1) Duplicate mongoose fields Error
   if (error.code == 11000) {
+    const value = Object.values(Object.values(Object.values(error))[3]);
     res.status(500).send({
       name: "Duplicated data",
-      description: "Please, choose another unique value!",
+      description: `Please, choose another unique value (${value})!`
     });
   }
   // (2) Cast Error
