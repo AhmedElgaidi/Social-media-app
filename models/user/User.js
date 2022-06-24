@@ -1,0 +1,64 @@
+const jwt = require("jsonwebtoken");
+const mongoose = require("mongoose");
+
+// Our User sub documents
+const UserInfoSchema = require("./userInfo/userInfoSchema");
+const UserAccountSchema = require("./userAccount/userAccountSchema");
+
+// ================================================
+const Schema = mongoose.Schema;
+
+const schemaOptions = {
+  // let's add some options to our user schema
+  timestamps: true, // To add createdAt and updatedAt fields
+  // minimize: false, // Don't store fields if it's empty
+  toJSON: {
+    // to display our virtual methods in case of asked data in json form
+    virtuals: true,
+  },
+  toObject: {
+    // In case of object form
+    virtuals: true,
+  },
+  versionKey: false, // To remove __v field
+};
+
+const userSchema = new Schema(
+  {
+    info: UserInfoSchema, // User personal data
+    account: UserAccountSchema, // User account data
+  },
+  schemaOptions
+);
+
+// =================================================
+// Our hooks (middlewares)
+
+// =================================================
+// Our methods
+userSchema.methods.generateAndSignAccessAndRefreshTokens = function () {
+  // (1) Generate access token
+  const access_token = jwt.sign(
+    { _id: this.id },
+    process.env.ACCESS_TOKEN_SECRET,
+    {
+      expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN,
+    }
+  );
+
+  // (2) Generate refresh token
+  const refresh_token = jwt.sign(this.id, process.env.REFRESH_TOKEN_SECRET, {
+    expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN,
+  });
+
+  // (3) Assign tokens to user document
+  this.account.tokens_list.push({
+    access_token,
+    refresh_token,
+  });
+  console.log(this);
+};
+
+// ==================================================
+// Let's export our User model
+module.exports = mongoose.model("User", userSchema);

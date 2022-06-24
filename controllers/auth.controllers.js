@@ -1,5 +1,5 @@
 // Our imports
-const User = require("../models/User");
+const User = require("../models/user/User");
 
 const catchAsyncErrors = require("../errors/catchAsyncErrors");
 const BaseError = require("../errors/BaseError");
@@ -14,11 +14,11 @@ const signUp_GET = (req, res, next) => {
 };
 
 const signUp_POST = async (req, res, next) => {
-  // Get user data
+  // (1) Get user data
   const { first_name, last_name, user_name, email, password } = req.body;
 
-  // Create user document (validate and sanitize on schema level)
-  const user = await User.create({
+  // (2) Create user document
+  const user = new User({
     info: {
       name: {
         first: first_name,
@@ -26,13 +26,25 @@ const signUp_POST = async (req, res, next) => {
       },
       user_name,
     },
-    email_list: [{ email }],
     account: {
+      session: [
+        {
+          tokens: {
+            access_token: { value: "23f4234" },
+            refresh_token: { value: "1234f234" },
+          },
+          device: { name: "abc" },
+        },
+      ],
       password,
+      email_list: [{ email }],
     },
   });
 
-  // Notify frontend with the status
+  // (3) Validate and sanitize: Did on schema level
+
+  await user.save();
+  // (5) Notify frontend with the status
   res.status(201).json({
     status: "Success",
     message: "User created successfully",
