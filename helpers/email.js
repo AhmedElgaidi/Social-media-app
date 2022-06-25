@@ -3,7 +3,7 @@ const nodemailer = require("nodemailer");
 const sendEmail = async (options) => {
   // (1) Create a transporter
   const transport = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,
+    service: process.env.EMAIL_HOST,
     port: 465,
     secure: true,
     auth: {
@@ -13,7 +13,7 @@ const sendEmail = async (options) => {
   });
   // (2) Define the email options
   const mailOptions = {
-    from: "Ahmed Elgaidi",
+    from: "Ahmed Elgaidi <elbotanistelbotanist@gmail.com>",
     to: options.email,
     subject: options.subject,
     text: options.message,
@@ -24,7 +24,7 @@ const sendEmail = async (options) => {
     if (error) {
       return console.log(error);
     }
-    return console.log(`Email sent: ${info.response}`);
+    return console.log(`Email sent: ${info.response}..................`);
   });
 };
 

@@ -1,6 +1,6 @@
 // Our imports
 const User = require("../models/user/User");
-const sendEmail = require('../helpers/email');
+const sendEmail = require("../helpers/email");
 const catchAsyncErrors = require("../errors/catchAsyncErrors");
 const BaseError = require("../errors/BaseError");
 
@@ -58,13 +58,17 @@ const signUp_POST = async (req, res, next) => {
 
   // (5) send him email with account verification token
   const verificationToken = await user.createEmailVerificationToken(); // (1) create verification token
-  const verificationUrl = `/verify-email/${verificationToken}`
-  const message = `Click to verify your email, ${verificationUrl}`
-  await sendEmail({ // (2) Send email
-    email: email,
-    subject: 'Email verification link',
-    message
+  const verificationUrl = `/verify-email/${verificationToken}`;
+  const message = `Click to verify your email, ${verificationUrl}`;
+  await sendEmail({
+    // (2) Send email
+    // email: email,
+    email: "ahmedelgaidi260@gmail.com",
+    subject: "Email verification link",
+    message,
   })
+    .then(() => console.log("email sent...."))
+    .catch((err) => console.log(err));
   // (6) Notify frontend with the status
   await res.status(201).json({
     status: "Success",
