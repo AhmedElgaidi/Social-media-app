@@ -1,6 +1,6 @@
 // Our imports
 const User = require("../models/user/User");
-
+const sendEmail = require('../helpers/email');
 const catchAsyncErrors = require("../errors/catchAsyncErrors");
 const BaseError = require("../errors/BaseError");
 
@@ -47,7 +47,7 @@ const signUp_POST = async (req, res, next) => {
         password,
         confirm_password,
       },
-      email_list: [{ email }],
+      email_list: [{ email, is_verified_at: Date.now() }],
     },
   });
 
@@ -57,10 +57,16 @@ const signUp_POST = async (req, res, next) => {
   await user.save();
 
   // (5) send him email with account verification token
-  TODO:
-
+  const verificationToken = await user.createEmailVerificationToken(); // (1) create verification token
+  const verificationUrl = `/verify-email/${verificationToken}`
+  const message = `Click to verify your email, ${verificationUrl}`
+  await sendEmail({ // (2) Send email
+    email: email,
+    subject: 'Email verification link',
+    message
+  })
   // (6) Notify frontend with the status
-  res.status(201).json({
+  await res.status(201).json({
     status: "Success",
     message:
       "User created successfully, check your mail box to verify your account",
@@ -71,7 +77,8 @@ const signUp_POST = async (req, res, next) => {
 };
 
 const verifyAccount_POST = (req, res, next) => {
-  
+  const token = req.params.token;
+  // verify token and make him log in
 };
 
 const login_GET = (req, res, next) => {

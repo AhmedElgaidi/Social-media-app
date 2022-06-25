@@ -4,7 +4,7 @@ module.exports = (error, req, res, next) => {
     const value = Object.values(Object.values(Object.values(error))[3]);
     res.status(500).send({
       name: "Duplicated data",
-      description: `Please, choose another unique value (${value})!`
+      description: `Please, choose another unique value (${value})!`,
     });
   }
   // (2) Cast Error
@@ -18,6 +18,14 @@ module.exports = (error, req, res, next) => {
     res.status(422).send({
       name: "Invalid Input",
       description: error,
+    });
+  }
+
+  // (4) Token expiration Error
+  if (error.name === "TokenExpiredError" || error.message === "jwt expired") {
+    res.status(422).send({
+      name: "Invalid Token",
+      description: `Sorry, your token is expired!!`,
     });
   }
   //etc.... look at the project with jonas at github

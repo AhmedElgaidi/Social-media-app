@@ -26,11 +26,32 @@ const userEmailSchema = new Schema({
     type: Boolean,
     default: false,
   },
-  is_verified: {
-    type: Boolean,
-    default: false,
+  is_changed_at: [Date], // changed from being primary to secondary and vice versa
+  verification: {
+    token: {
+      type: String,
+    },
+    is_expired_at: Date,
+    is_verified: {
+      type: Boolean,
+      default: false,
+    },
+    is_verified_at: Date,
   },
 });
+
+// ==================================================
+// Our mongoose middlewares
+
+// Assign the time of user changing his email status from secondary to primary and vice versa
+userEmailSchema.pre("save", async function (next) {
+  // If there is no modification in the is_secondary field, then do nothing
+  if (!this.isModified("is_secondary")) return next();
+
+  this.is_changed_at = Date.now();
+  next();
+});
+
 
 // ==================================================
 // Let's export our created model

@@ -31,9 +31,12 @@ const userPasswordSchema = new Schema({
       message: "Passwords don't match!",
     },
   },
-  passwordChangedAt: {
-    type: Date, // time of first creation or any modification later
-  },
+  passwordChangedAt: [
+    {
+      type: Date, // time of first creation or any modification later
+      default: Date.now
+    },
+  ],
 });
 
 // ==================================================
@@ -70,12 +73,8 @@ userPasswordSchema.pre("save", async function (next) {
   next();
 });
 
-
 // ==================================================
 // Our methods
-
-
-
 
 // ==================================================
 // Let's export our created model
