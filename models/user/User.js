@@ -62,7 +62,7 @@ userSchema.methods.generateAndSignAccessAndRefreshTokens = async function () {
   });
 };
 
-// Email verification token
+// Create email verification token
 userSchema.methods.createEmailVerificationToken = async function () {
   // create token
   const token = await jwt.sign(
@@ -74,18 +74,8 @@ userSchema.methods.createEmailVerificationToken = async function () {
   );
 
   // Assign it to the user document
-  this.account.email_list.filter(
-    (email) => !email.is_secondary
-  )[0].verification.token = token;
-
+  this.account.email.verification.token = token;
   return token;
-};
-
-// Verify email verification token
-
-userSchema.methods.verifyEmailVerificationToken = async function(token) {
-  const decodedToken = await jwt.verify(token, process.env.EMAIL_VERIFICATION_TOKEN_SECRET);
-  return decodedToken;
 };
 
 // ==================================================

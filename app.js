@@ -24,7 +24,8 @@ const app = express();
 app.use(express.json({ limit: "20mb" }));
 
 // For sanitizing user-supplied data to prevent MongoDB Operator Injection
-app.use( // only removes ($ and .)
+app.use(
+  // only removes ($ and .)
   mongoSanitize({
     onSanitize: ({ req, key }) => {
       console.warn(`This request[${key}] is sanitized`, req);
@@ -33,10 +34,20 @@ app.use( // only removes ($ and .)
 );
 
 //======================================================================
-
 // My routes
-app.use("/api/v1", userRoutes);
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1", userRoutes);
+
+// 404 handler
+app.all("*", (req, res, next) => {
+  // for all HTTP methods and unhandled routes
+  res.status(404).json({
+    status: "Failed",
+    message: `Sorry, we can't find "${req.originalUrl}" among our server routes`,
+  });
+  next();
+});
+
 
 // Our error handling and logging middlewares| It has to be after all middlewares
 app.use(logError);

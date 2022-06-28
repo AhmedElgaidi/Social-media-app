@@ -1,8 +1,9 @@
 // Our imports
 const User = require("../models/user/User");
 const sendEmail = require("../helpers/email");
-const catchAsyncErrors = require("../errors/catchAsyncErrors");
 const BaseError = require("../errors/BaseError");
+
+const verifyEmailVerificationTokenExpiration = require("../helpers/verifyEmailVerificationTokenExpiration");
 
 //======================================================================
 
@@ -47,28 +48,30 @@ const signUp_POST = async (req, res, next) => {
         password,
         confirm_password,
       },
-      email_list: [{ email, is_verified_at: Date.now() }],
+      email: { value: email },
     },
   });
 
   // (3) Validate and sanitize: Did on schema level
 
   // (4) User document would be saved if everything is okay
-  await user.save();
 
   // (5) send him email with account verification token
   const verificationToken = await user.createEmailVerificationToken(); // (1) create verification token
-  const verificationUrl = `/verify-email/${verificationToken}`;
+  const verificationUrl = `${req.protocol}://${process.env.HOST}:${process.env.PORT}/api/v1/auth/verify-email/${verificationToken}`;
   const message = `Click to verify your email, ${verificationUrl}`;
-  await sendEmail({
-    // (2) Send email
-    // email: email,
-    email: "ahmedelgaidi260@gmail.com",
-    subject: "Email verification link",
-    message,
-  })
-    .then(() => console.log("email sent...."))
-    .catch((err) => console.log(err));
+  await user.save();
+
+  // await sendEmail({
+  //   // (2) Send email
+
+  //   email, //TODO:
+  //   subject: "Email verification link",
+  //   message,
+  // })
+  //   .then(() => console.log("email sent successfully ...."))
+  //   .catch((err) => console.log(err));
+
   // (6) Notify frontend with the status
   await res.status(201).json({
     status: "Success",
@@ -80,9 +83,42 @@ const signUp_POST = async (req, res, next) => {
   });
 };
 
-const verifyAccount_POST = (req, res, next) => {
-  const token = req.params.token;
-  // verify token and make him log in
+const verifyAccount_POST = async (req, res, next) => {
+  // (1) Get email verification token
+  // const verificationToken = req.params.token;
+  const verificationToken = req.params.token;
+
+  // (2) Search about it in DB
+  const user = await User.findOne({
+    "account.email.verification.token": verificationToken,
+  });
+
+  if (!user) {
+    res.status(422).json({
+      name: "Invalid email verification token",
+      description:
+        "Please, provide us with your correct email verification token!!",
+    });
+  }
+  // (4) Check it's expiration date
+
+  // (5) Make account's email verified
+  if (user) {
+    const isExpired = await verifyEmailVerificationTokenExpiration(
+      verificationToken
+    );
+    if (isExpired) {
+      res.status(422).json({
+        name: "Invalid Token",
+        description: "Your email verification token is expired!!!",
+      });
+    }
+    console.log(isExpired);
+  }
+
+  // (6) Delete the verification token
+
+  // (7) Save user document
 };
 
 const login_GET = (req, res, next) => {
@@ -91,44 +127,9 @@ const login_GET = (req, res, next) => {
   });
 };
 
-const login_POST = async (req, res, next) => {
-  try {
-    // (1) Get Credentials
-    const { email, password } = req.body;
+const login_POST = async (req, res, next) => {};
 
-    // (2) Check their existence
-    if (!email || !password) {
-      return next(new ErrorHandler("Please, send your credentials", 404));
-    }
-
-    // (3) Validate credentials
-    // TODO:
-
-    // (4) Sanitize credentials
-    // TODO:
-
-    // (5) Check for user existence
-    const user = await User.findOne({
-      email_list: email,
-    });
-    if (!user) {
-      res.send("not found");
-      return next(new ErrorHandler("User is not found", 404));
-    }
-    // bla bla
-    user.generateAndSignAccessAndRefreshTokens();
-    user.save().then(() => {
-      res.send(user);
-    });
-    // (6) Check for password match
-    // (5) get access token
-    // (6) Check access token existence
-    // (7) Verify access token
-    // (8) Notify frontend with the status
-  } catch (error) {
-    next(new ErrorHandler("Something went wrong,\nPlease try again", 500));
-  }
-};
+const writeQuery = async (req, res, next) => {};
 
 //======================================================================
 // Export our controllers
@@ -138,4 +139,5 @@ module.exports = {
   verifyAccount_POST,
   login_GET,
   login_POST,
+  writeQuery,
 };

@@ -6,7 +6,7 @@ const Schema = mongoose.Schema;
 
 const userEmailSchema = new Schema({
   _id: false, // To prevent creating id field for sub-documents
-  email: {
+  value: {
     type: String,
     unique: [true, "Please, provide us with your own email!"],
     required: [true, "Please, provide us with your email!"],
@@ -22,22 +22,17 @@ const userEmailSchema = new Schema({
       message: "Please, don't send malicious data and try to be decent user!15",
     },
   },
-  is_secondary: {
-    type: Boolean,
-    default: false,
-  },
-  is_changed_at: [Date], // changed from being primary to secondary and vice versa
   verification: {
     token: {
       type: String,
-    },
-    is_expired_at: Date,
-    is_verified: {
-      type: Boolean,
-      default: false,
-    },
-    is_verified_at: Date,
+    }
   },
+  is_verified: {
+    type: Boolean,
+    default: false,
+  },
+  is_verified_at: Date,
+  // array of trusted emails would be here
 });
 
 // ==================================================
@@ -51,7 +46,6 @@ userEmailSchema.pre("save", async function (next) {
   this.is_changed_at = Date.now();
   next();
 });
-
 
 // ==================================================
 // Let's export our created model

@@ -8,7 +8,7 @@ const Schema = mongoose.Schema;
 
 const userAccountSchema = new Schema({
   _id: false, // To prevent creating id field for sub-documents
-  email_list: [UserEmailSchema], // User email/ session/ device data
+  email: UserEmailSchema, // User email/ session/ device data
   password: userPasswordSchema, // User password data
   session: [userSessionSchema], // Session access/ refresh tokens and device info
 });

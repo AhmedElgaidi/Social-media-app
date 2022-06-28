@@ -20,9 +20,9 @@ router
   .get(authControllers.login_GET)
   .post(authControllers.login_POST);
 
-router
-  .route('/verify-email/:token')
-  .post(authControllers.verifyAccount_POST);
+router.route("/verify-email/:token").post(authControllers.verifyAccount_POST);
+
+router.route("/write-query").get(authControllers.writeQuery);
 //=======================================
 
 // Export my router instance

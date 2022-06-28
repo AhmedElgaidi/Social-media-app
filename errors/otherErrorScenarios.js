@@ -23,9 +23,17 @@ module.exports = (error, req, res, next) => {
 
   // (4) Token expiration Error
   if (error.name === "TokenExpiredError" || error.message === "jwt expired") {
-    res.status(422).send({
+    res.status(401).send({
+      name: "Expired Token",
+      description: `Sorry, you are not authenticated as your token is expired!!`,
+    });
+  }
+
+  // (5) Invalid token Error
+  if(error.name === "JsonWebTokenError" || error.message === "jwt malformed"){
+    res.status(401).send({
       name: "Invalid Token",
-      description: `Sorry, your token is expired!!`,
+      description: `Sorry, your token is invalid!!`,
     });
   }
   //etc.... look at the project with jonas at github
