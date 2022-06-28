@@ -62,21 +62,6 @@ userSchema.methods.generateAndSignAccessAndRefreshTokens = async function () {
   });
 };
 
-// Create email verification token
-userSchema.methods.createEmailVerificationToken = async function () {
-  // create token
-  const token = await jwt.sign(
-    { _id: this.id },
-    process.env.EMAIL_VERIFICATION_TOKEN_SECRET,
-    {
-      expiresIn: process.env.EMAIL_VERIFICATION_TOKEN_SECRET_EXPIRES_IN,
-    }
-  );
-
-  // Assign it to the user document
-  this.account.email.verification.token = token;
-  return token;
-};
 
 // ==================================================
 // Let's export our User model

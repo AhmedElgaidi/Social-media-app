@@ -24,8 +24,8 @@ module.exports = (error, req, res, next) => {
   // (4) Token expiration Error
   if (error.name === "TokenExpiredError" || error.message === "jwt expired") {
     res.status(401).send({
-      name: "Expired Token",
-      description: `Sorry, you are not authenticated as your token is expired!!`,
+      name: "Invalid Token",
+      description: `Sorry, your token is expired!!`,
     });
   }
 
