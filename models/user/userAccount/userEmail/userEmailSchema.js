@@ -22,10 +22,8 @@ const userEmailSchema = new Schema({
       message: "Please, don't send malicious data and try to be decent user!15",
     },
   },
-  verification: {
-    token: {
-      type: String,
-    }
+  verification_token: {
+    type: String,
   },
   is_verified: {
     type: Boolean,

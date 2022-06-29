@@ -7,7 +7,7 @@ const Schema = mongoose.Schema;
 
 const userPasswordSchema = new Schema({
   _id: false, // To prevent creating id field for sub-documents
-  password: {
+  value: {
     type: String,
     required: [true, "Please, provide us with your password!"],
     minlength: [
@@ -26,7 +26,7 @@ const userPasswordSchema = new Schema({
     required: [true, "Please, confirm your password"],
     validate: {
       validator: function (str) {
-        return str === this.password;
+        return str === this.value;
       },
       message: "Passwords don't match!",
     },
@@ -46,10 +46,10 @@ userPasswordSchema.pre("save", async function (next) {
   // We want only to encrypt the password fields only when saving or updating password field
   // Imagine the user is updating his email, we don't want to re-encrypt the password again, right?
   // There is a method called isModified(), we can call it on any doc field
-  if (!this.isModified("password")) return next();
+  if (!this.isModified("value")) return next();
 
   // otherwise, is the hash the password
-  this.password = await bcrypt.hash(this.password, 12); // 12 is the salt round
+  this.value = await bcrypt.hash(this.value, 12); // 12 is the salt round
   // now, we don't want to use the passwordConfirm field anymore, we just used it for validation
   // we don't have to hash it too
   // So, give it the undefined value (by this move, we deleted the field)

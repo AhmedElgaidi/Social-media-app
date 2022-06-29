@@ -1,8 +1,8 @@
 const jwt = require("jsonwebtoken");
 
 // (1) Create email verification token
-const create_email_verification_token = (email) => {
-  return jwt.sign({ email }, process.env.EMAIL_VERIFICATION_TOKEN_SECRET, {
+const create_email_verification_token = async (email) => {
+  return await jwt.sign({ email }, process.env.EMAIL_VERIFICATION_TOKEN_SECRET, {
     expiresIn: process.env.EMAIL_VERIFICATION_TOKEN_SECRET_EXPIRES_IN,
   });
 };

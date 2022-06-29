@@ -4,7 +4,6 @@ const mongoose = require("mongoose");
 // Our User sub documents
 const UserInfoSchema = require("./userInfo/userInfoSchema");
 const UserAccountSchema = require("./userAccount/userAccountSchema");
-const { hash } = require("bcrypt");
 
 // ================================================
 const Schema = mongoose.Schema;
@@ -36,31 +35,7 @@ const userSchema = new Schema(
 
 // =================================================
 // Our methods
-userSchema.methods.generateAndSignAccessAndRefreshTokens = async function () {
-  // (1) Generate access token
-  const access_token = await jwt.sign(
-    { _id: this.id },
-    process.env.ACCESS_TOKEN_SECRET,
-    {
-      expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN,
-    }
-  );
 
-  // (2) Generate refresh token
-  const refresh_token = await jwt.sign(
-    { _id: this.id },
-    process.env.REFRESH_TOKEN_SECRET,
-    {
-      expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN,
-    }
-  );
-
-  // (3) Assign tokens to user document
-  this.account.tokens_list.push({
-    access_token,
-    refresh_token,
-  });
-};
 
 
 // ==================================================
