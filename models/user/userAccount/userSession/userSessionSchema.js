@@ -8,24 +8,10 @@ const userSessionSchema = new Schema({
   _id: false, // To prevent creating id field for sub-documents
   tokens: {
     access_token: {
-      value: {
-        type: String,
-        // default: "sdfsfw2f!@#4e",
-      },
-      is_Active: {
-        type: Boolean,
-        default: true,
-      },
+      type: String,
     },
     refresh_token: {
-      value: {
-        type: String,
-        // default: "sdfsfw2f!@#4e",
-      },
-      is_Active: {
-        type: Boolean,
-        default: true,
-      },
+      type: String,
     },
   },
   device: userDeviceInfoSchema,

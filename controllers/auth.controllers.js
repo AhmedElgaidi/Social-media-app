@@ -163,27 +163,26 @@ const login_POST = async (req, res, next) => {
   }
 
   // TODO: check if he is verified or not
-  // (4) Create access token
-  const accessToken = await create_access_token(user.id);
+  // (4) Create access and refresh token
+  const access_token = await create_access_token(user.id);
+  const refresh_token = await create_refresh_token(user.id);
 
-  // (5) Create refresh token
-  const refreshToken = await create_refresh_token(user.id);
+  // (5) Get device info
+  const device = req.device;
 
-  //(6) Assign tokens to user document
+  //(6) Assign tokens and device info to the user document
   user.account.session.push({
     tokens: {
-      access_token: {
-        value: accessToken,
-      },
-      refresh_token: {
-        value: refreshToken,
-      },
+      access_token,
+      refresh_token,
     },
-    device: "abc",
+    device,
   });
 
   // (7) Save user document
-  await user.save({ validateBeforeSave: false });
+  await user
+    .save({ validateBeforeSave: false })
+    .then((user) => console.log(user.account.session));
 
   // (8) Inform user about status
   await res.status(200).json({
@@ -195,7 +194,8 @@ const login_POST = async (req, res, next) => {
 };
 
 const writeQuery_GET = async (req, res, next) => {
-  await User.find().then((users) => res.send(users));
+  res.send(req.device);
+  // await User.find().then((users) => res.send(users));
 };
 const writeQuery_POST = (req, res, next) => {
   res.send("Consider it a private resource!");
@@ -204,48 +204,72 @@ const writeQuery_POST = (req, res, next) => {
 const refreshToken_POST = async (req, res, next) => {
   // (1) Get refresh token
   const refresh_token =
-    req.headers["x-refresh-token"] || req.body.refresh_token;
+    req.headers["x-refresh-token"] ||
+    req.body.refresh_token ||
+    req.query.refresh_token;
 
-  // (2) Check for its existence
+  // (2) Check for its existence in the received request
   if (!refresh_token) {
     res.status(404).json({
       name: "Invalid Input",
       description: "Your refresh token is not found!!",
     });
   }
-  // (3) verify (validate/ check expiration) refresh token
+  // (3) verify refresh token
   const decodedRefreshToken = await verify_refresh_token(refresh_token).catch(
+    // Errors in refresh token verification:
     (error) => {
-      //  if user manipulated the token
+      //  (1) if refresh token is manipulated
       if (error.toString().includes("invalid signature")) {
         return res.status(422).json({
           name: "Invalid Token",
-          description: "Your refresh token is manipulated!!",
+          description: "Sorry, your refresh token is manipulated!!",
         });
       }
+
+      // (2) if refresh token is expired
       return res.status(401).json({
         name: "Invalid Token",
-        description: "Your refresh token is expired!!",
+        description:
+          "Sorry, your refresh token is expired, you need to log in again with your credentials!!",
       });
+
+      // (3)
+      // TODO: If it's expired => delete the session data (both tokens) => log user out => now,
+      // he needs to login from scratch with his credentials
     }
   );
 
+  // (4) Create new access and refresh tokens
   const newAccessToken = await create_access_token(decodedRefreshToken._id);
   const newRefreshToken = await create_refresh_token(decodedRefreshToken._id);
 
+  // (5) Get user document from decoded refresh token
   await User.findById(decodedRefreshToken._id).then(async (user) => {
-    const userEditedTokens = user.account.session.find(
-      (el) => el.tokens.refresh_token.value === refresh_token
-    ).tokens;
+    // (1) Check if received refresh token is among other user refresh tokens!!
+    const updatedUser = user.account.session.find(
+      (el) => el.tokens.refresh_token === refresh_token
+    );
+    // (2) If it's not found!!
+    if (!updatedUser) {
+      res.status(401).json({
+        name: "Invalid Token",
+        description:
+          "Sorry, we couldn't find the associated account to this refresh token!!!",
+      });
+    }
 
-    console.log({ userEditedTokens });
-    userEditedTokens.access_token.value = newAccessToken;
-    userEditedTokens.refresh_token.value = newRefreshToken;
-
+    // If everything is okay??? then....
+    // (6) Assign user document the new tokens and device info
+    updatedUser.tokens.access_token = newAccessToken;
+    updatedUser.tokens.refresh_token = newRefreshToken;
+    updatedUser.device = req.device;
+console.log(updatedUser)
+    // (7) Save user document and inform the front-end with the status
     await user.save({ validateBeforeSave: false }).then(() =>
       res.status(200).json({
         status: "Success",
-        message: "Your assigned new access and refresh tokens",
+        message: "You are assigned new access and refresh tokens",
         tokens: {
           access_token: newAccessToken,
           refresh_token: newRefreshToken,
@@ -254,6 +278,39 @@ const refreshToken_POST = async (req, res, next) => {
     );
   });
 };
+
+// Get all account session
+const sessions_GET = async (req, res, next) => {
+  const userId = req.userId;
+  const access_token = req.headers["x-access-token"] || req.body.access_token;
+
+  const user = await User.findById(userId).select({
+    "account.session": 1,
+    _id: 0,
+  });
+
+  const accountCurrentSession = user.account.session.find(
+    (el) => el.tokens.access_token === access_token
+  );
+  const accountOtherSession = user.account.session.filter(
+    (el) => el.tokens.access_token !== access_token
+  );
+
+  res.status(200).json({
+    status: "Success",
+    sessions: {
+      Current: accountCurrentSession,
+      Other: {
+        count: accountOtherSession.length,
+        sessions: accountOtherSession,
+      },
+    },
+  });
+};
+
+const revokeSession_POST = (req, res, next) => {
+  
+}
 
 //======================================================================
 // Export our controllers
@@ -266,4 +323,6 @@ module.exports = {
   writeQuery_GET,
   writeQuery_POST,
   refreshToken_POST,
+  sessions_GET,
+  revokeSession_POST
 };
