@@ -49,7 +49,7 @@ const protect = async (req, res, next) => {
       const isAccessTokenFound = user.account.session.find(
         (el) => el.tokens.access_token === access_token
       );
-      
+
       // (2) If it's not found, then don't allow him to the next middleware!!
       if (!isAccessTokenFound) {
         return res.status(401).json({
@@ -60,11 +60,15 @@ const protect = async (req, res, next) => {
       }
     });
 
-  // If it reaches here, then the access token is valid and not expired and found in the user document 
+  // If it reaches here, then the access token is valid and not expired and found in the user document
   // and we can now let the request move to the next middleware!!
 
-  // () Assign the user id the request pipeline
+  // (5) Assign the user id the request pipeline
   req.userId = decodedAccessToken._id;
+
+  // (6) pass access token to the request, so we can revoke it when we want
+  req.access_token = access_token;
+
   next();
 };
 

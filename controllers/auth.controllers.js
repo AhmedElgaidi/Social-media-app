@@ -180,9 +180,7 @@ const login_POST = async (req, res, next) => {
   });
 
   // (7) Save user document
-  await user
-    .save({ validateBeforeSave: false })
-    .then((user) => console.log(user.account.session));
+  await user.save({ validateBeforeSave: false });
 
   // (8) Inform user about status
   await res.status(200).json({
@@ -194,8 +192,7 @@ const login_POST = async (req, res, next) => {
 };
 
 const writeQuery_GET = async (req, res, next) => {
-  res.send(req.device);
-  // await User.find().then((users) => res.send(users));
+  await User.find().then((users) => res.send(users));
 };
 const writeQuery_POST = (req, res, next) => {
   res.send("Consider it a private resource!");
@@ -250,6 +247,7 @@ const refreshToken_POST = async (req, res, next) => {
     const updatedUser = user.account.session.find(
       (el) => el.tokens.refresh_token === refresh_token
     );
+
     // (2) If it's not found!!
     if (!updatedUser) {
       res.status(401).json({
@@ -264,7 +262,7 @@ const refreshToken_POST = async (req, res, next) => {
     updatedUser.tokens.access_token = newAccessToken;
     updatedUser.tokens.refresh_token = newRefreshToken;
     updatedUser.device = req.device;
-console.log(updatedUser)
+
     // (7) Save user document and inform the front-end with the status
     await user.save({ validateBeforeSave: false }).then(() =>
       res.status(200).json({
@@ -308,10 +306,60 @@ const sessions_GET = async (req, res, next) => {
   });
 };
 
-const revokeSession_POST = (req, res, next) => {
-  
-}
+// Delete a user session
+const revokeSession_DELETE = async (req, res, next) => {
+  // (1) Get access token and userId from protect middleware
+  const access_token = req.access_token,
+    userId = req.userId;
 
+  // (2) Get user document
+  const user = await User.findById(userId).select({
+    "account.session": 1,
+  });
+
+  // (3) Remove current session from user document
+  user.account.session = user.account.session.filter(
+    (el) => el.tokens.access_token !== access_token
+  );
+
+  // (4) save updated user document and inform front-end with the status
+  await user.save().then((user) => {
+    res.status(200).json({
+      status: "Success",
+      message: "Congrats, your desired session is deleted successfully!!",
+      remained_session: {
+        count: user.account.session.length,
+        sessions: user.account.session,
+      },
+    });
+  });
+};
+
+// Log user out
+const logout_DELETE = async (req, res, next) => {
+  // (1) Get access token and userId from protect middleware
+  const access_token = req.access_token,
+    userId = req.userId;
+
+  // (2) Get user document
+  const user = await User.findById(userId).select({
+    "account.session": 1,
+  });
+
+  // (3) Remove current session from user document
+  user.account.session = user.account.session.filter(
+    (el) => el.tokens.access_token !== access_token
+  );
+
+  // (4) save updated user document
+  await user.save();
+
+  // (5) Inform front-end with the status
+  res.status(200).json({
+    status: "Success",
+    message: "You are logged out successfully!!",
+  });
+};
 //======================================================================
 // Export our controllers
 module.exports = {
@@ -324,5 +372,6 @@ module.exports = {
   writeQuery_POST,
   refreshToken_POST,
   sessions_GET,
-  revokeSession_POST
+  revokeSession_DELETE,
+  logout_DELETE,
 };

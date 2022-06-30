@@ -32,7 +32,8 @@ router
 router.route("/refresh").post(getDeviceInfo, authControllers.refreshToken_POST);
 
 router.route("/sessions").get(protect, authControllers.sessions_GET);
-router.route('/revoke-session').get(protect, authControllers.revokeSession_POST);
+router.route('/delete-session').delete(protect, authControllers.revokeSession_DELETE);
+router.route('/logout').delete(protect, authControllers.logout_DELETE);
 //=======================================
 
 // Export my router instance

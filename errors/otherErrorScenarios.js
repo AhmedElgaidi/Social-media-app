@@ -36,7 +36,11 @@ module.exports = (error, req, res, next) => {
       description: `Sorry, your token is invalid!!`,
     });
   }
-  //etc.... look at the project with jonas at github
+
+  // (6) "Cannot set headers after they are sent to the client" 
+  if(error.code === 'ERR_HTTP_HEADERS_SENT') {
+    return;
+  }
 
   // to pass the error to the next middleware which will log it (returnError middleware)
   // + to complete the request life cycle and prevent it from hanging/stopping
