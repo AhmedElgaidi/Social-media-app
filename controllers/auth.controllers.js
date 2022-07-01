@@ -243,17 +243,26 @@ const refreshToken_POST = async (req, res, next) => {
 
   // (5) Get user document from decoded refresh token
   await User.findById(decodedRefreshToken._id).then(async (user) => {
-    // (1) Check if received refresh token is among other user refresh tokens!!
+    // (1) If user document is not found
+    if (!user) {
+      res.status(404).json({
+        name: "Invalid Input",
+        description:
+          "Sorry, we couldn't find the associated account to this refresh token!!!",
+      });
+    }
+
+    // (2) Check if received refresh token is among other user refresh tokens!!
     const updatedUser = user.account.session.find(
       (el) => el.tokens.refresh_token === refresh_token
     );
 
-    // (2) If it's not found!!
+    // (3) If it's not found!!
     if (!updatedUser) {
       res.status(401).json({
         name: "Invalid Token",
         description:
-          "Sorry, we couldn't find the associated account to this refresh token!!!",
+          "Sorry, we couldn't find the refresh token associated to this account!!!",
       });
     }
 
@@ -360,6 +369,48 @@ const logout_DELETE = async (req, res, next) => {
     message: "You are logged out successfully!!",
   });
 };
+
+const activateAccount_GET = (req, res, next) => {};
+
+const deactivateAccount_GET = async (req, res, next) => {
+  // (1) Get userId from protect middleware
+  const userId = req.userId;
+
+  // (2) Get user document from DB
+  const user = await User.findById(userId).select({
+    "account.is_account_active": 1,
+  });
+
+  // (3) check if it's already deactivated
+  // I don't need this as i've put the is_account_active middleware before this controller!!!
+
+  // (4) Update user document
+  user.account.is_account_active = false;
+
+  // (5) Save updated user document
+  await user.save();
+
+  // (6) Inform front-end about the status
+  res.status(200).json({
+    status: "Success",
+    message: "Your account is deactivated successfully!!!",
+  });
+};
+
+const deleteAccount_DELETE = async (req, res, next) => {
+  // (1) Get userId from protect middleware
+  const userId = req.userId;
+
+  // (2) Delete user document from DB
+  await User.deleteOne({ id: userId });
+
+  // (3) Inform front-end with the status
+  res.status(200).json({
+    status: "Success",
+    message: "Your account is deleted permanently successfully!!!",
+  });
+};
+
 //======================================================================
 // Export our controllers
 module.exports = {
@@ -374,4 +425,7 @@ module.exports = {
   sessions_GET,
   revokeSession_DELETE,
   logout_DELETE,
+  activateAccount_GET,
+  deactivateAccount_GET,
+  deleteAccount_DELETE,
 };

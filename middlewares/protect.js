@@ -42,22 +42,35 @@ const protect = async (req, res, next) => {
   await User.findById(decodedAccessToken._id)
     .select({
       "account.session": 1,
+      "account.is_account_active": 1,
       _id: 0,
     })
     .then((user) => {
-      // (1) Check if access token is found or not in user document
-      const isAccessTokenFound = user.account.session.find(
-        (el) => el.tokens.access_token === access_token
-      );
-
-      // (2) If it's not found, then don't allow him to the next middleware!!
-      if (!isAccessTokenFound) {
-        return res.status(401).json({
-          name: "Invalid Token",
+      // (1) If user document is not found
+      if (!user) {
+        res.status(404).json({
+          name: "Invalid Input",
           description:
             "Sorry, we couldn't find the associated account to this access token!!!",
         });
       }
+
+      // (2) Check if access token is found or not in user document
+      const isAccessTokenFound = user.account.session.find(
+        (el) => el.tokens.access_token === access_token
+      );
+
+      // (3) If it's not found, then don't allow him to the next middleware!!
+      if (!isAccessTokenFound) {
+        return res.status(401).json({
+          name: "Invalid Token",
+          description:
+            "Sorry, we couldn't find the access token associated to this account!!!",
+        });
+      }
+
+      // (4) pass account active state to the next middleware
+      req.is_account_active = user.account.is_account_active;
     });
 
   // If it reaches here, then the access token is valid and not expired and found in the user document

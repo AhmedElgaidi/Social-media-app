@@ -4,6 +4,7 @@ const express = require("express");
 const authControllers = require("../controllers/auth.controllers");
 const protect = require("../middlewares/protect");
 const getDeviceInfo = require("../middlewares/getDeviceInfo");
+const is_account_active = require("../middlewares/isAccountActive");
 //======================================
 
 // Let's create our express router instance
@@ -26,14 +27,35 @@ router.route("/verify-email/:token").post(authControllers.verifyAccount_POST);
 
 router
   .route("/write-query")
-  .get(protect, getDeviceInfo, authControllers.writeQuery_GET)
-  .post(protect, authControllers.writeQuery_POST);
+  .get(
+    protect,
+    is_account_active,
+    getDeviceInfo,
+    authControllers.writeQuery_GET
+  )
+  .post(protect, is_account_active, authControllers.writeQuery_POST);
 
 router.route("/refresh").post(getDeviceInfo, authControllers.refreshToken_POST);
 
-router.route("/sessions").get(protect, authControllers.sessions_GET);
-router.route('/delete-session').delete(protect, authControllers.revokeSession_DELETE);
-router.route('/logout').delete(protect, authControllers.logout_DELETE);
+router
+  .route("/sessions")
+  .get(protect, is_account_active, authControllers.sessions_GET);
+router
+  .route("/delete-session")
+  .delete(protect, is_account_active, authControllers.revokeSession_DELETE);
+router
+  .route("/logout")
+  .delete(protect, is_account_active, authControllers.logout_DELETE);
+
+router
+  .route("/activate-account")
+  .get(protect, is_account_active, authControllers.activateAccount_GET);
+router
+  .route("/deactivate-account")
+  .get(protect, is_account_active, authControllers.deactivateAccount_GET);
+router
+  .route("/delete-account")
+  .delete(protect, is_account_active, authControllers.deleteAccount_DELETE);
 //=======================================
 
 // Export my router instance

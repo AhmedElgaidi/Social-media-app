@@ -11,6 +11,10 @@ const userAccountSchema = new Schema({
   email: UserEmailSchema, // User email/ session/ device data
   password: userPasswordSchema, // User password data
   session: [userSessionSchema], // Session access/ refresh tokens and device info
+  is_account_active: {
+    type: Boolean,
+    default: true
+  }
 });
 
 // ==================================================
