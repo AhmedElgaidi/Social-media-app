@@ -465,7 +465,7 @@ const activateAccount_POST = async (req, res, next) => {
 
   // (4) If account is already activated
   const is_account_active = user.account.activation.is_account_active;
-  if(is_account_active) {
+  if (is_account_active) {
     return res.status(422).json({
       name: "Invalid Input",
       description: "Your account is already activated!!",
@@ -481,7 +481,8 @@ const activateAccount_POST = async (req, res, next) => {
   // (7) Inform front-end about the status
   res.status(200).json({
     status: "Success",
-    message: "Your account is activated successfully. Now you can login and play around!!!",
+    message:
+      "Your account is activated successfully. Now you can login and play around!!!",
   });
 };
 
@@ -524,6 +525,43 @@ const deleteAccount_DELETE = async (req, res, next) => {
   });
 };
 
+const changePassword_POST = async (req, res, next) => {
+  // (1) Get userId and user data from request
+  const { old_password, password, confirm_password } = req.body;
+  const userId = req.userId;
+
+  // (2) Get user document
+  const user = await User.findById(userId).select({
+    "account.password": 1,
+  });
+
+  // (3) check if his old password is correct
+  const isCorrectPassword = await correct_password(
+    old_password,
+    user.account.password.value
+  );
+
+  // If password is not correct
+  if (!isCorrectPassword) {
+    res.status(401).json({
+      name: "Invalid credentials",
+      description: "Your old password is not correct!!",
+    });
+  }
+
+  // (4) Assign the new password to user object
+  user.account.password.value = password;
+  user.account.password.confirm_password = confirm_password;
+
+  // (5) Save user document
+  await user.save();
+
+  // (6) Inform front-end about the status
+  res.status(200).json({
+    status: "Success",
+    description: "Congrats, your password changed successfully!!",
+  });
+};
 //======================================================================
 // Export our controllers
 module.exports = {
@@ -541,4 +579,5 @@ module.exports = {
   activateAccount_POST,
   deactivateAccount_POST,
   deleteAccount_DELETE,
+  changePassword_POST,
 };

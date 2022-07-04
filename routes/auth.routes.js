@@ -56,6 +56,10 @@ router
 router
   .route("/delete-account")
   .delete(protect, is_account_active, authControllers.deleteAccount_DELETE);
+
+router
+  .route("/change-password")
+  .post(protect, is_account_active, authControllers.changePassword_POST);
 //=======================================
 
 // Export my router instance
