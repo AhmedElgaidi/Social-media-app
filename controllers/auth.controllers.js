@@ -14,6 +14,11 @@ const {
   verify_refresh_token,
 } = require("../helpers/tokens/refreshToken");
 
+const {
+  create_account_activation_token,
+  verify_account_activation_token,
+} = require("../helpers/tokens/accountActivation");
+
 const correct_password = require("../helpers/password");
 //======================================================================
 
@@ -50,6 +55,7 @@ const signUp_POST = async (req, res, next) => {
         confirm_password,
       },
       email: { value: email },
+      activation: {},
     },
   });
 
@@ -163,14 +169,52 @@ const login_POST = async (req, res, next) => {
   }
 
   // TODO: check if he is verified or not
-  // (4) Create access and refresh token
+
+  // (4) Check if account is active or not
+  const is_account_active = user.account.activation.is_account_active;
+
+  // If user deactivated his account
+  if (!is_account_active) {
+    // send him email. So, he can activate his account again!!
+
+    // (1) Create the account activation token
+    const activationToken = await create_account_activation_token(
+      user.account.email.value
+    );
+
+    // (2) Assign the token to the user document
+    user.account.activation.account_activation_token = activationToken;
+
+    // (3) Save user document into the DB
+    await user.save({ validateBeforeSave: false });
+
+    // (4) Setup activation link
+    const activationUrl = `${req.protocol}://${process.env.HOST}:${process.env.PORT}/api/v1/auth/activate-account/${activationToken}`;
+    const message = `Click to activate your account, ${activationUrl}, you only have ${process.env.ACCOUNT_ACTIVATION_TOKEN_SECRET_EXPIRES_IN}`;
+
+    // (5) Send the activation link to user
+    TODO: await sendEmail({
+      email,
+      subject: "Account activation link",
+      message,
+    });
+
+    // (6)
+    return res.status(200).json({
+      status: "Success",
+      message:
+        "Welcome back!, Your account was deactivated. So, we sent you an account activation link to proceed!!",
+    });
+  }
+
+  // (5) Create access and refresh token
   const access_token = await create_access_token(user.id);
   const refresh_token = await create_refresh_token(user.id);
 
-  // (5) Get device info
+  // (6) Get device info
   const device = req.device;
 
-  //(6) Assign tokens and device info to the user document
+  //(7) Assign tokens and device info to the user document
   user.account.session.push({
     tokens: {
       access_token,
@@ -179,10 +223,10 @@ const login_POST = async (req, res, next) => {
     device,
   });
 
-  // (7) Save user document
+  // (8) Save user document
   await user.save({ validateBeforeSave: false });
 
-  // (8) Inform user about status
+  // (9) Inform user about status
   await res.status(200).json({
     status: "Success",
     message: "congrats, you now can access all our private resources!!",
@@ -257,12 +301,24 @@ const refreshToken_POST = async (req, res, next) => {
       (el) => el.tokens.refresh_token === refresh_token
     );
 
-    // (3) If it's not found!!
+    //If it's not found!!
     if (!updatedUser) {
       res.status(401).json({
         name: "Invalid Token",
         description:
           "Sorry, we couldn't find the refresh token associated to this account!!!",
+      });
+    }
+
+    // (3) Check if account is active or not
+    const is_account_active = user.account.activation.is_account_active;
+
+    // If it's deactivated
+    if (!is_account_active) {
+      return res.status(404).json({
+        status: "Failed",
+        message:
+          "your account is deactivated. Please, check your account mail box to re-activate it so you can log in again!!",
       });
     }
 
@@ -370,22 +426,79 @@ const logout_DELETE = async (req, res, next) => {
   });
 };
 
-const activateAccount_GET = (req, res, next) => {};
+const activateAccount_POST = async (req, res, next) => {
+  // (1) Get account activation token from request
+  const token = req.params.token;
 
-const deactivateAccount_GET = async (req, res, next) => {
+  // (2) Validate token and check it's expiration date
+  await verify_account_activation_token(token).catch((error) => {
+    // (1) if user manipulated the token
+    if (error.toString().includes("invalid signature")) {
+      return res.status(422).json({
+        name: "Invalid Token",
+        description: "Sorry, your access token is manipulated!!",
+      });
+    }
+
+    // (2) if access token is expired
+    res.status(401).json({
+      name: "Invalid Token",
+      description:
+        "Sorry, your access token is expired. Use your refresh token to get new tokens!!",
+    });
+  });
+
+  // (3) If everything is okay, then check it in the DB
+  const user = await User.findOne({
+    "user.account.activation.account_activation_token": token,
+  }).select({
+    "account.activation": 1,
+  });
+
+  // If user not found
+  if (!user) {
+    return res.status(404).json({
+      name: "Invalid Credentials",
+      description: "Please, provide us with your own correct credentials!!",
+    });
+  }
+
+  // (4) If account is already activated
+  const is_account_active = user.account.activation.is_account_active;
+  if(is_account_active) {
+    return res.status(422).json({
+      name: "Invalid Input",
+      description: "Your account is already activated!!",
+    });
+  }
+
+  // (5) Update user document (make it active)
+  user.account.activation.is_account_active = true;
+
+  // (6) Save user document
+  await user.save();
+
+  // (7) Inform front-end about the status
+  res.status(200).json({
+    status: "Success",
+    message: "Your account is activated successfully. Now you can login and play around!!!",
+  });
+};
+
+const deactivateAccount_POST = async (req, res, next) => {
   // (1) Get userId from protect middleware
   const userId = req.userId;
 
   // (2) Get user document from DB
   const user = await User.findById(userId).select({
-    "account.is_account_active": 1,
+    "account.activation.is_account_active": 1,
   });
 
   // (3) check if it's already deactivated
   // I don't need this as i've put the is_account_active middleware before this controller!!!
 
   // (4) Update user document
-  user.account.is_account_active = false;
+  user.account.activation.is_account_active = false;
 
   // (5) Save updated user document
   await user.save();
@@ -425,7 +538,7 @@ module.exports = {
   sessions_GET,
   revokeSession_DELETE,
   logout_DELETE,
-  activateAccount_GET,
-  deactivateAccount_GET,
+  activateAccount_POST,
+  deactivateAccount_POST,
   deleteAccount_DELETE,
 };

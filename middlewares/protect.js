@@ -27,6 +27,7 @@ const protect = async (req, res, next) => {
           description: "Sorry, your access token is manipulated!!",
         });
       }
+      
       // (2) if access token is expired
       res.status(401).json({
         name: "Invalid Token",
@@ -42,7 +43,7 @@ const protect = async (req, res, next) => {
   await User.findById(decodedAccessToken._id)
     .select({
       "account.session": 1,
-      "account.is_account_active": 1,
+      "account.activation.is_account_active": 1,
       _id: 0,
     })
     .then((user) => {
@@ -70,7 +71,7 @@ const protect = async (req, res, next) => {
       }
 
       // (4) pass account active state to the next middleware
-      req.is_account_active = user.account.is_account_active;
+      req.is_account_active = user.account.activation.is_account_active;
     });
 
   // If it reaches here, then the access token is valid and not expired and found in the user document

@@ -48,11 +48,11 @@ router
   .delete(protect, is_account_active, authControllers.logout_DELETE);
 
 router
-  .route("/activate-account")
-  .get(protect, is_account_active, authControllers.activateAccount_GET);
+  .route("/activate-account/:token")
+  .post(authControllers.activateAccount_POST);
 router
   .route("/deactivate-account")
-  .get(protect, is_account_active, authControllers.deactivateAccount_GET);
+  .post(protect, is_account_active, authControllers.deactivateAccount_POST);
 router
   .route("/delete-account")
   .delete(protect, is_account_active, authControllers.deleteAccount_DELETE);

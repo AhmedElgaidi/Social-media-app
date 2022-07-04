@@ -9,7 +9,7 @@ const is_account_active = async (req, res, next) => {
     if(!is_account_active) {
         res.status(401).json({
             name: "Deactivated Account",
-            description: "Sorry, your account is deactivated. You need to activate it first!!"
+            description: "Sorry, your account is deactivated."
         });
     }
 
