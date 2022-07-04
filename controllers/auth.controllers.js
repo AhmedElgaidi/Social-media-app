@@ -19,6 +19,11 @@ const {
   verify_account_activation_token,
 } = require("../helpers/tokens/accountActivation");
 
+const {
+  create_password_reset_token_token,
+  verify_password_reset_token_token,
+} = require("../helpers/tokens/resetToken");
+
 const correct_password = require("../helpers/password");
 //======================================================================
 
@@ -55,6 +60,9 @@ const signUp_POST = async (req, res, next) => {
         confirm_password,
       },
       email: { value: email },
+      reset: {
+        password_reset_token: "",
+      },
       activation: {},
     },
   });
@@ -193,7 +201,7 @@ const login_POST = async (req, res, next) => {
     const message = `Click to activate your account, ${activationUrl}, you only have ${process.env.ACCOUNT_ACTIVATION_TOKEN_SECRET_EXPIRES_IN}`;
 
     // (5) Send the activation link to user
-    TODO: await sendEmail({
+    await sendEmail({
       email,
       subject: "Account activation link",
       message,
@@ -238,7 +246,7 @@ const login_POST = async (req, res, next) => {
 const writeQuery_GET = async (req, res, next) => {
   await User.find().then((users) => res.send(users));
 };
-const writeQuery_POST = (req, res, next) => {
+const writeQuery_POST = async (req, res, next) => {
   res.send("Consider it a private resource!");
 };
 
@@ -450,7 +458,7 @@ const activateAccount_POST = async (req, res, next) => {
 
   // (3) If everything is okay, then check it in the DB
   const user = await User.findOne({
-    "user.account.activation.account_activation_token": token,
+    "account.activation.account_activation_token": token,
   }).select({
     "account.activation": 1,
   });
@@ -562,6 +570,116 @@ const changePassword_POST = async (req, res, next) => {
     description: "Congrats, your password changed successfully!!",
   });
 };
+
+const forgetPassword_GET = (req, res, next) => {
+  res.status(200).send("Welcome to reset password page...");
+};
+
+const forgetPassword_POST = async (req, res, next) => {
+  // (1) Get user email from request body
+  const { email } = req.body;
+
+  // If not found
+  if (!email) {
+    return res.status(404).json({
+      status: "Invalid Input",
+      description: "Please, send your email!!",
+    });
+  }
+
+  // (2) Check it in the DB
+  const user = await User.findOne({
+    "account.email.value": email,
+  });
+
+  // If user not found
+  if (!user) {
+    // prevent user enumeration
+    return res.status(200).json({
+      status: "Success",
+      description: "Please, check your mailbox for our password reset link!!",
+    });
+  }
+
+
+  // (3) Create password reset token
+  const passwordResetToken = await create_password_reset_token_token(user.id);
+
+  // (4) Assign the token to the user document
+  user.account.reset.password_reset_token = passwordResetToken;
+
+  // (5) Save user document into the DB
+  await user.save({ validateBeforeSave: false });
+
+  // (6) Setup activation link
+  const passwordResetUrl = `${req.protocol}://${process.env.HOST}:${process.env.PORT}/api/v1/auth/reset-password/${passwordResetToken}`;
+  const message = `Click to Reset your account, ${passwordResetUrl}, you only have ${process.env.PASSWORD_RESET_TOKEN_SECRET_EXPIRES_IN}. If you didn't asked for reset, then ignore this email.`;
+
+  // (7) Send the activation link to user
+  await sendEmail({
+    email,
+    subject: "Password Reset Link",
+    message,
+  });
+
+  // (8) Inform the front-end with the status
+  return res.status(200).json({
+    status: "Success",
+    description: "Please, check your mailbox for our password reset link!!",
+  });
+};
+
+const resetPassword_GET = (req, res, next) => {
+
+}
+
+const resetPassword_POST = async (req, res, next) => {
+  // (1) Get password reset token from request
+  const passwordResetToken = req.params.token;
+
+  // If token is not found
+  if (!passwordResetToken) {
+    return res.status(404).json({
+      status: "Not Found",
+      description: "Please, send your token!!",
+    });
+  }
+
+  // (2) Verify password reset token
+  await verify_password_reset_token_token(passwordResetToken).catch((error) => {
+    if (error.toString().includes("invalid signature")) {
+      return res.status(422).json({
+        name: "Invalid Token",
+        description: "Sorry, your password reset token is manipulated!!",
+      });
+    }
+
+    // (2) if access token is expired
+    res.status(401).json({
+      name: "Invalid Token",
+      description: "Sorry, your password reset token is expired.",
+    });
+  });
+
+  // (3) Check token in DB
+  const user = await User.findOne({
+    "account.reset.password_reset_token": passwordResetToken,
+  }).select({
+    // "account.reset"
+  });
+
+  // If user not found
+  if (!user) {
+    return res.status(422).json({
+      status: "Invalid Input",
+      description: "We could't find this token associated to any account!!!",
+    });
+  }
+
+  // (4)
+  res.redirect('www.google.com');
+};
+
 //======================================================================
 // Export our controllers
 module.exports = {
@@ -580,4 +698,8 @@ module.exports = {
   deactivateAccount_POST,
   deleteAccount_DELETE,
   changePassword_POST,
+  forgetPassword_GET,
+  forgetPassword_POST,
+  resetPassword_GET,
+  resetPassword_POST,
 };

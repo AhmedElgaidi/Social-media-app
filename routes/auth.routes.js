@@ -33,7 +33,7 @@ router
     getDeviceInfo,
     authControllers.writeQuery_GET
   )
-  .post(protect, is_account_active, authControllers.writeQuery_POST);
+  .post(authControllers.writeQuery_POST);
 
 router.route("/refresh").post(getDeviceInfo, authControllers.refreshToken_POST);
 
@@ -60,6 +60,17 @@ router
 router
   .route("/change-password")
   .post(protect, is_account_active, authControllers.changePassword_POST);
+
+router
+  .route("/forget-password")
+  .get(authControllers.forgetPassword_GET)
+  .post(authControllers.forgetPassword_POST);
+
+router
+  .route("/reset-password/:token")
+  .post(authControllers.resetPassword_POST)
+  .get(authControllers.resetPassword_GET);
+
 //=======================================
 
 // Export my router instance

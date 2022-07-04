@@ -12,6 +12,7 @@ const userEmailSchema = new Schema({
     required: [true, "Please, provide us with your email!"],
     lowercase: true,
     trim: true,
+    index: true,
     validate: [validator.isEmail, "Please, provide us with a valid email!"],
     validate: {
       // to remove any special char as well as white spaces and tabs
