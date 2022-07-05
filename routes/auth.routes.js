@@ -67,7 +67,7 @@ router
   .post(authControllers.forgetPassword_POST);
 
 router
-  .route("/reset-password/:token")
+  .route("/reset-password/:token/:userId")
   .post(authControllers.resetPassword_POST)
   .get(authControllers.resetPassword_GET);
 

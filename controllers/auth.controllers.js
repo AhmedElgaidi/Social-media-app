@@ -572,7 +572,7 @@ const changePassword_POST = async (req, res, next) => {
 };
 
 const forgetPassword_GET = (req, res, next) => {
-  res.status(200).send("Welcome to reset password page...");
+  res.status(200).send("Welcome to forget password page...");
 };
 
 const forgetPassword_POST = async (req, res, next) => {
@@ -594,13 +594,12 @@ const forgetPassword_POST = async (req, res, next) => {
 
   // If user not found
   if (!user) {
-    // prevent user enumeration
+    // To prevent our users from enumeration
     return res.status(200).json({
       status: "Success",
       description: "Please, check your mailbox for our password reset link!!",
     });
   }
-
 
   // (3) Create password reset token
   const passwordResetToken = await create_password_reset_token_token(user.id);
@@ -612,7 +611,7 @@ const forgetPassword_POST = async (req, res, next) => {
   await user.save({ validateBeforeSave: false });
 
   // (6) Setup activation link
-  const passwordResetUrl = `${req.protocol}://${process.env.HOST}:${process.env.PORT}/api/v1/auth/reset-password/${passwordResetToken}`;
+  const passwordResetUrl = `${req.protocol}://${process.env.HOST}:${process.env.PORT}/api/v1/auth/reset-password/${passwordResetToken}/${user.id}`;
   const message = `Click to Reset your account, ${passwordResetUrl}, you only have ${process.env.PASSWORD_RESET_TOKEN_SECRET_EXPIRES_IN}. If you didn't asked for reset, then ignore this email.`;
 
   // (7) Send the activation link to user
@@ -630,12 +629,18 @@ const forgetPassword_POST = async (req, res, next) => {
 };
 
 const resetPassword_GET = (req, res, next) => {
-
-}
+  // /reset-password/token/userId
+  res.send(
+    "This is where you enter your new password (last step in the process)"
+  );
+};
 
 const resetPassword_POST = async (req, res, next) => {
-  // (1) Get password reset token from request
-  const passwordResetToken = req.params.token;
+  // (1) Get new passwords and password reset token from request
+  const { token: passwordResetToken, userId } = req.params,
+    { password, confirm_password } = req.body;
+
+  // (2) Check for their existence in the request
 
   // If token is not found
   if (!passwordResetToken) {
@@ -645,8 +650,25 @@ const resetPassword_POST = async (req, res, next) => {
     });
   }
 
+  // If user id is not found
+  if (!userId) {
+    return res.status(404).json({
+      status: "Not Found",
+      description: "Please, send your ID!!!",
+    });
+  }
+
+  // If password and confirm_password are not found
+  if (!(password && confirm_password)) {
+    return res.status(404).json({
+      status: "Not Found",
+      description: "Please, send your new password!!",
+    });
+  }
+
   // (2) Verify password reset token
   await verify_password_reset_token_token(passwordResetToken).catch((error) => {
+    // (1) If user manipulated the token
     if (error.toString().includes("invalid signature")) {
       return res.status(422).json({
         name: "Invalid Token",
@@ -654,18 +676,19 @@ const resetPassword_POST = async (req, res, next) => {
       });
     }
 
-    // (2) if access token is expired
+    // (2) if password reset token is expired
     res.status(401).json({
       name: "Invalid Token",
       description: "Sorry, your password reset token is expired.",
     });
   });
 
-  // (3) Check token in DB
+  // (3) Check token and ID in DB
   const user = await User.findOne({
     "account.reset.password_reset_token": passwordResetToken,
   }).select({
-    // "account.reset"
+    "account.reset": 1,
+    "account.password": 1,
   });
 
   // If user not found
@@ -676,8 +699,31 @@ const resetPassword_POST = async (req, res, next) => {
     });
   }
 
-  // (4)
-  res.redirect('www.google.com');
+  // IF user is found and really has this token, but his id doesn't match
+  if (user && user.id !== userId) {
+    return res.status(422).json({
+      status: "Invalid Input",
+      description: "The given token and ID don't match!!!!",
+    });
+  }
+
+  // Now, everything is okay. So, we can establish the new password
+
+  // (4) Assign the new password
+  user.account.password.value = password;
+  user.account.password.confirm_password = confirm_password;
+
+  // (5) Remove reset token from DB
+  user.account.reset.password_reset_token = undefined;
+
+  // (6) Save updated user
+  await user.save();
+
+  // (7) Inform the frontend with the status
+  res.status(200).json({
+    Status: "Success",
+    description: "Congrats, your new password is saved successfully.",
+  });
 };
 
 //======================================================================
