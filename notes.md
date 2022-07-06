@@ -1,0 +1,2 @@
+# should i store the 2fa code in hashed format in our db?
+No, we don't. it's called 2fa (two factors to get in!!!), so if the attacker accesed the database, he can generate a TOTP based on this 2fa code, but still can't know the user password as it's hased, right!!! 

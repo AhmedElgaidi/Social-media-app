@@ -4,6 +4,7 @@ const userPasswordSchema = require("./userPassword/userPasswordSchema");
 const userSessionSchema = require("./userSession/userSessionSchema");
 const userAccountActivationSchema = require('./userActivation/userAccountActivationSchema');
 const userPasswordResetSchema = require('./userReset/userPasswordResetSchema');
+const two_faSchema = require('./twoFA/two_faSchema');
 
 // ================================================
 const Schema = mongoose.Schema;
@@ -14,6 +15,7 @@ const userAccountSchema = new Schema({
   password: userPasswordSchema, // User password data
   activation: userAccountActivationSchema, // User activation methods/ data
   reset: userPasswordResetSchema,
+  two_fa: two_faSchema,
   session: [userSessionSchema], // Session access/ refresh tokens and device info
 });
 

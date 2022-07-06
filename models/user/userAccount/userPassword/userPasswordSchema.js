@@ -31,12 +31,7 @@ const userPasswordSchema = new Schema({
       message: "Passwords don't match!",
     },
   },
-  passwordChangedAt: [
-    {
-      type: Date, // time of first creation or any modification later
-      default: Date.now
-    },
-  ],
+  passwordChangedAt: Date
 });
 
 // ==================================================

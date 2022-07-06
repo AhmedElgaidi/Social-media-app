@@ -25,6 +25,8 @@ const {
 } = require("../helpers/tokens/resetToken");
 
 const correct_password = require("../helpers/password");
+
+const speakeasy = require("speakeasy");
 //======================================================================
 
 // My controllers
@@ -64,6 +66,11 @@ const signUp_POST = async (req, res, next) => {
         password_reset_token: "",
       },
       activation: {},
+      two_fa: {
+        totp: {
+          temp_secret: "",
+        },
+      },
     },
   });
 
@@ -726,6 +733,138 @@ const resetPassword_POST = async (req, res, next) => {
   });
 };
 
+const allTwoFactorAuthenticationMethods_GET = (req, res, next) => {
+  res
+    .status(200)
+    .send(
+      "The page where the user choose his preferred method of having 2fa in his account. \nThe methods i'm working on are: \n- authenticator app code (google authenticator) \n- text message(eg. six digits) \n- security question \n- send code to the mailbox"
+    );
+};
+
+// method (1): TOTP (Time-based One-Time Password)
+const totpPage_GET = (req, res, next) => {
+  res
+    .status(200)
+    .send(
+      "Welcome to the Time-Based One-Time password.\nThis should have an enable/ disable button."
+    );
+};
+
+const generateSecretTOTP_POST = async (req, res, next) => {
+  // (1) Generate the secret
+  const temp_secret = speakeasy.generateSecret();
+
+  // (2) Get user document
+  const user = await User.findById(req.userId).select({
+    "account.two_fa": 1,
+  });
+
+  // (3) Check if the user already has a secret
+  if (user.account.two_fa.totp.secret) {
+    res.status(422).json({
+      name: "Invalid Input",
+      description: "you already enabled this feature!!!",
+    });
+  }
+  // (4) Assign the temp_secret to the user object
+  user.account.two_fa.totp.temp_secret = temp_secret.base32;
+
+  // (5) Save user document
+  await user.save();
+
+  // (6) send the secret to the front-end to generate a qrcode based on it. So the user can scan it and give us
+  // the 6 digits resulted from any authenticating app such as: Google authenticator
+  // [NOTE]: This would be the first and last time to share the secret (It should be saved on the DB)!!!!
+  res.send({
+    message:
+      "The frontend should use this given secret and create a QR code based on it, so the user can scan it and send back the generated digits.",
+    secret: temp_secret.base32,
+  });
+};
+
+// Verify given TOTP
+const verifyTOTP_POST = async (req, res, next) => {
+  // (1) Get TOTP token
+  const { token } = req.body;
+
+  // If not found
+  if (!token) {
+    res.status(404).json({
+      name: "Not Found",
+      description:
+        "Please, send your token generated from your authenticator app!!",
+    });
+  }
+
+  // (2) Get user document
+  const user = await User.findById(req.userId).select({
+    "account.two_fa.totp": 1,
+  });
+
+  // Check if the user already has a secret
+  if (user.account.two_fa.secret) {
+    res.status(422).json({
+      name: "Invalid Input",
+      description: "you already enabled this feature!!!",
+    });
+  }
+
+  // (3) Check the given token against the previously assigned temp_secret
+  const isVerified = speakeasy.totp.verify({
+    secret: user.account.two_fa.totp.temp_secret,
+    encoding: "base32",
+    token,
+  });
+
+  // If verification failed
+  if (!isVerified) {
+    res.status(422).json({
+      name: "Invalid Input",
+      description: "Sorry, your given token is not valid.",
+    });
+  }
+
+  // If everything is okay until now?
+  // (4) Save the temp_secret permanently
+  user.account.two_fa.totp.secret = user.account.two_fa.totp.temp_secret;
+
+  // (5) Delete the temp_secret field
+  user.account.two_fa.totp.temp_secret = undefined;
+
+  // (6) Save user document
+  await user.save();
+
+  // (7) Inform the frontend with the status
+  res.status(200).json({
+    status: "Success",
+    description: "Congrats, you successfully enabled 2FA feature (TOTP).",
+  });
+};
+
+const disableTOTP_DELETE = async (req, res, next) => {
+  // (1) Get userId from previous middleware
+  const userId = req.userId;
+
+  // (2) Get user document from DB
+  const user = await User.findById(userId).select({
+    "account.two_fa.totp": 1,
+  });
+
+  // (3) Update the user document
+  user.account.two_fa.totp = undefined;
+
+  // (4) Save user document
+  await user.save();
+
+  // (5) Inform the frontend with the status
+  res.status(200).json({
+    status: "Success",
+    description: "You disabled the TOTP feature (keep in mind that you are less secure now!!)"
+  })
+};
+
+// phone number + country number
+
 //======================================================================
 // Export our controllers
 module.exports = {
@@ -748,4 +887,9 @@ module.exports = {
   forgetPassword_POST,
   resetPassword_GET,
   resetPassword_POST,
+  allTwoFactorAuthenticationMethods_GET,
+  totpPage_GET,
+  generateSecretTOTP_POST,
+  verifyTOTP_POST,
+  disableTOTP_DELETE,
 };

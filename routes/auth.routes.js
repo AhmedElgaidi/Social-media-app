@@ -71,6 +71,21 @@ router
   .post(authControllers.resetPassword_POST)
   .get(authControllers.resetPassword_GET);
 
+router
+  .route("/2fa")
+  .get(protect, is_account_active, authControllers.allTwoFactorAuthenticationMethods_GET);
+
+// TOTP
+router
+  .route("/2fa/totp")
+  .get(protect, is_account_active, authControllers.totpPage_GET)
+  .post(protect, is_account_active, authControllers.generateSecretTOTP_POST)
+  .delete(protect, is_account_active, authControllers.disableTOTP_DELETE);
+
+router
+  .route("/2fa/totp/verify")
+  .post(protect, is_account_active, authControllers.verifyTOTP_POST);
+
 //=======================================
 
 // Export my router instance
