@@ -66,11 +66,7 @@ const signUp_POST = async (req, res, next) => {
         password_reset_token: "",
       },
       activation: {},
-      two_fa: {
-        totp: {
-          temp_secret: "",
-        },
-      },
+      two_fa: {},
     },
   });
 
@@ -742,14 +738,7 @@ const allTwoFactorAuthenticationMethods_GET = (req, res, next) => {
 };
 
 // method (1): TOTP (Time-based One-Time Password)
-const totpPage_GET = (req, res, next) => {
-  res
-    .status(200)
-    .send(
-      "Welcome to the Time-Based One-Time password.\nThis should have an enable/ disable button."
-    );
-};
-
+// we need to do this during setup and do the verifying part again when we need that.
 const generateSecretTOTP_POST = async (req, res, next) => {
   // (1) Generate the secret
   const temp_secret = speakeasy.generateSecret();
@@ -867,8 +856,100 @@ const disableTOTP_DELETE = async (req, res, next) => {
   });
 };
 
-// method (2):  ()
+// method (2): Email him OTP  (One-Time Password)
+const enableOTP_POST = async (req, res, next) => {
+  // (1) Get userId from protect middleware
+  const userId = req.userId;
 
+  // (2) Get user document
+  const user = await User.findById(userId).select({
+    "account.two_fa.otp": 1,
+  });
+
+  // If it's already enabled
+  if (user.account.two_fa.otp.is_enabled) {
+    res.status(422).json({
+      status: "Invalid Input",
+      description: "This feature (OTP) is already enabled",
+    });
+  }
+
+  // (3) Update user document (enable otp)
+  user.account.two_fa.otp.is_enabled = true;
+
+  // (4) Save user document
+  await user.save();
+
+  // (5) Inform frontend with the status
+  res.status(200).json({
+    name: "Success",
+    description: "Congrats, you enabled a 2fa method (OTP).",
+    user,
+  });
+};
+
+const disableOTP_DELETE = async (req, res, next) => {
+  // (1) Get userId from protect middleware
+  const userId = req.userId;
+
+  // (2) Get user document
+  const user = await User.findById(userId).select({
+    "account.two_fa.otp": 1,
+  });
+
+  // If it's already disabled
+  if (!user.account.two_fa.otp.is_enabled) {
+    res.status(422).json({
+      name: "Invalid Input",
+      description: "This feature (OTP) is already disabled.",
+    });
+  }
+
+  // (3) Update user document (disable otp)
+  user.account.two_fa.otp.is_enabled = false;
+  user.account.two_fa.otp.value = undefined;
+  user.account.two_fa.otp.created_at = undefined;
+  user.account.two_fa.otp.expires_at = undefined;
+
+  // (4) Save user document
+  await user.save();
+
+  // (5) Inform frontend with the status
+  res.status(200).json({
+    name: "Success",
+    description:
+      "You disabled a 2fa method (OTP) successfully (Keep in mind, you are less secure now!!).",
+    user,
+  });
+};
+
+// complete from here, generate and verify OTP / we just enabled/disabled the otp feature!!!
+// const myFunc = () => {
+
+//   // () Generate the OTP number
+//   // const otp = Math.floor(1000 + Math.random() * 900000);
+//   // console.log("otp: ", otp);
+//   // const user = await User.findById(req.userId).select({
+//   //   "account.two_fa.otp": 1,
+//   // });
+//   // user.account.two_fa.otp.value = otp;
+//   // await user.save();
+//   // res.status(200).json({
+//   //   name: "Success",
+//   //   description:
+//   //     "Please, check your mailbox, we sent you a link which is only valid for 15 minutes.",
+//   // });
+
+//   // When i receive the mailbox (6 digits)
+//   // check it exists on the request
+//   // hash it and compare with saved hashed one
+//   // check it's associated to the user
+//   // check it's expiry. expires_at < Date.now() then its' expired!!!
+
+// }
+// const verifyOTP_POST = (req, res, next) => {};
+// What if the token is expired? (show him button with re-send)
+// resend endpoint "/2fa/otp/resend"
 //======================================================================
 // Export our controllers
 module.exports = {
@@ -892,8 +973,10 @@ module.exports = {
   resetPassword_GET,
   resetPassword_POST,
   allTwoFactorAuthenticationMethods_GET,
-  totpPage_GET,
   generateSecretTOTP_POST,
   verifyTOTP_POST,
   disableTOTP_DELETE,
+  enableOTP_POST,
+  disableOTP_DELETE,
+  // verifyOTP_POST,
 };

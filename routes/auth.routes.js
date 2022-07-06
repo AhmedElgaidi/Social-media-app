@@ -73,18 +73,27 @@ router
 
 router
   .route("/2fa")
-  .get(protect, is_account_active, authControllers.allTwoFactorAuthenticationMethods_GET);
+  .get(
+    protect,
+    is_account_active,
+    authControllers.allTwoFactorAuthenticationMethods_GET
+  );
 
 // TOTP
 router
   .route("/2fa/totp")
-  .get(protect, is_account_active, authControllers.totpPage_GET)
   .post(protect, is_account_active, authControllers.generateSecretTOTP_POST)
   .delete(protect, is_account_active, authControllers.disableTOTP_DELETE);
 
 router
   .route("/2fa/totp/verify")
   .post(protect, is_account_active, authControllers.verifyTOTP_POST);
+
+// OTP
+router
+  .route("/2fa/otp")
+  .post(protect, is_account_active, authControllers.enableOTP_POST)
+  .delete(protect, is_account_active, authControllers.disableOTP_DELETE);
 
 //=======================================
 
