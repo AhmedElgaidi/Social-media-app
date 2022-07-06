@@ -28,8 +28,9 @@ const correct_password = require("../helpers/password");
 
 const speakeasy = require("speakeasy");
 const is_otp_match = require("../helpers/is_otp_match");
-//======================================================================
+const giveAccess = require("../helpers/giveAccess");
 
+//======================================================================
 // My controllers
 const signUp_GET = (req, res, next) => {
   res.json({
@@ -224,8 +225,10 @@ const login_POST = async (req, res, next) => {
   // (1) If TOTP is enabled
   const is_totp_enabled = user.account.two_fa.totp.is_enabled;
   if (is_totp_enabled) {
-    // create a middleware for this feature
-    return next();
+    return res.status(200).json({
+      message:
+        "The user is enabling his first 2fa method (TOTP)\nThe frontend should redirect him to '/totp/verify'. So, he can send his TOTP code",
+    });
   }
 
   // (2) If OTP is enabled
@@ -238,39 +241,14 @@ const login_POST = async (req, res, next) => {
   ////////=========================================================
   // These steps should be done when there is no 2fa method enabled and after
   // every successful verification 2fa method used.
-
-  // (5) Create access and refresh token
-  const access_token = await create_access_token(user.id);
-  const refresh_token = await create_refresh_token(user.id);
-
-  // (6) Get device info
-  const device = req.device;
-
-  //(7) Assign tokens and device info to the user document
-  user.account.session.push({
-    tokens: {
-      access_token,
-      refresh_token,
-    },
-    device,
-  });
-
-  // (8) Save user document
-  await user.save({ validateBeforeSave: false });
-
-  // (9) Inform user about status
-  await res.status(200).json({
-    status: "Success",
-    message: "congrats, you now can access all our private resources!!",
-    "tokens number": user.account.session.length,
-    tokens: user.account.session,
-  });
+  await giveAccess({ user, req, res });
 };
 
 const writeQuery_GET = async (req, res, next) => {
   await User.find().then((users) => res.send(users));
 };
 const writeQuery_POST = async (req, res, next) => {
+  console.log(req.url, req);
   res.send("Consider it a private resource!");
 };
 
@@ -792,8 +770,7 @@ const generateSecretTOTP_POST = async (req, res, next) => {
   });
 };
 
-// Verify given TOTP
-const verifyTOTP_POST = async (req, res, next) => {
+const verifyTOTP_during_setup_POST = async (req, res, next) => {
   // (1) Get TOTP token
   const { token } = req.body;
 
@@ -853,7 +830,59 @@ const verifyTOTP_POST = async (req, res, next) => {
     description: "Congrats, you successfully enabled 2FA feature (TOTP).",
   });
 };
+const verifyTOTP_during_login_POST = async (req, res, next) => {
+  // (1) Get TOTP token
+  const { userId, token } = req.body;
 
+  // If token is not found
+  if (!token) {
+    res.status(404).json({
+      name: "Not Found",
+      description:
+        "Please, send your token generated from your authenticator app!!",
+    });
+  }
+
+  // If userId is not found
+  if (!token) {
+    res.status(404).json({
+      name: "Not Found",
+      description: "Please, send your ID!!",
+    });
+  }
+
+  // (2) Get user document
+  const user = await User.findById(userId).select({
+    "account.two_fa.totp": 1,
+    "account.session": 1,
+  });
+
+  // (3) Check if the user doesn't have a secret
+  if (!user.account.two_fa.totp.is_enabled) {
+    res.status(422).json({
+      name: "Invalid Input",
+      description: "Sorry, you don't have this 2fa method (TOTP) enabled.",
+    });
+  }
+
+  // (4) Check the given token against the stored secret
+  const isVerified = speakeasy.totp.verify({
+    secret: user.account.two_fa.totp.secret,
+    encoding: "base32",
+    token,
+  });
+
+  // If verification failed
+  if (!isVerified) {
+    return res.status(422).json({
+      name: "Invalid Input",
+      description: "Sorry, your given totp token is not valid.",
+    });
+  }
+
+  // Give access
+  await giveAccess({ user, req, res });
+};
 const disableTOTP_DELETE = async (req, res, next) => {
   // (1) Get userId from previous middleware
   const userId = req.userId;
@@ -877,7 +906,7 @@ const disableTOTP_DELETE = async (req, res, next) => {
   });
 };
 
-// method (2): Email him OTP  (One-Time Password)
+// method (2): Email him OTP code  (One-Time Password)
 const enableOTP_POST = async (req, res, next) => {
   // (1) Get userId from protect middleware
   const userId = req.userId;
@@ -960,7 +989,7 @@ const generateSendOTP = async (req, res, next) => {
   await sendEmail({
     email: user.account.email.value,
     subject: "OTP Code",
-    message: `Hello, there.\nThis is your ${otp} otp code, you have to provide it to verify your login attempt (Only valid for 15 min).`,
+    message: `Hello, there.\nThis is your "${otp}" otp code, you have to provide it to verify your login attempt (Only valid for 15 min).`,
   });
 
   // (5) Inform frontend with the status
@@ -969,10 +998,6 @@ const generateSendOTP = async (req, res, next) => {
     description:
       "Please, check your mailbox. To verify your identity. So, you can log in",
   });
-  //--------------------------------
-  // generate the access and refresh tokens
-  // save user document
-  // inform frontend
 };
 
 const otpPage_GET = (req, res, next) => {
@@ -1014,6 +1039,7 @@ const verifyOTP_POST = async (req, res, next) => {
   // (2) Check user by it' ID in our DB
   const user = await User.findById(userId).select({
     "account.two_fa.otp": 1,
+    "account.session": 1,
   });
 
   // If user not found
@@ -1070,12 +1096,8 @@ const verifyOTP_POST = async (req, res, next) => {
   user.account.two_fa.otp.expires_at = undefined;
   user.account.two_fa.otp.created_at = undefined;
 
-  // (7) Save user document
-  await user.save();
-
-  // (8) Inform frontend with the status
-  res.send("Congrats, you now can log in and access our private resources!!");
-  // TODO:  put  the last code part in login controller.
+  // (7) Give him/her access
+  await giveAccess({ user, req, res });
 };
 
 const re_generate_send_OTP_POST = async (req, res, next) => {
@@ -1135,7 +1157,7 @@ const re_generate_send_OTP_POST = async (req, res, next) => {
   await sendEmail({
     email: user.account.email.value,
     subject: "OTP Code",
-    message: `Hello, there.\nThis is your ${otp} otp code, you have to provide it to verify your login attempt (Only valid for 15 min).`,
+    message: `Hello, there.\nThis is your "${otp}" otp code, you have to provide it to verify your login attempt (Only valid for 15 min).`,
   });
 
   // (5) Inform frontend with the status
@@ -1145,6 +1167,10 @@ const re_generate_send_OTP_POST = async (req, res, next) => {
       "Please, check your mailbox, we have sent you another otp code instead of the expired one.",
   });
 };
+
+// method (3): ()
+
+
 //======================================================================
 // Export our controllers
 module.exports = {
@@ -1169,7 +1195,8 @@ module.exports = {
   resetPassword_POST,
   allTwoFactorAuthenticationMethods_GET,
   generateSecretTOTP_POST,
-  verifyTOTP_POST,
+  verifyTOTP_during_setup_POST,
+  verifyTOTP_during_login_POST,
   disableTOTP_DELETE,
   enableOTP_POST,
   disableOTP_DELETE,

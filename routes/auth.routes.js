@@ -91,7 +91,9 @@ router
 
 router
   .route("/2fa/totp/verify")
-  .post(protect, is_account_active, authControllers.verifyTOTP_POST);
+  .post(protect, is_account_active, authControllers.verifyTOTP_during_setup_POST);
+
+router.route("/totp/verify").post(authControllers.verifyTOTP_during_login_POST);
 
 // OTP
 router
