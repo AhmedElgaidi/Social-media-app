@@ -29,7 +29,7 @@ const two_faSchema = new Schema({
 
 // ==================================================
 two_faSchema.pre("save", async function (next) {
-  if (!this.isModified("totp.is_enabled")) return next();
+  if (!this.isModified("totp.is_enabled") || this.isNew) return next();
 
   // Assign date of enabling TOTP feature
   this.totp.is_changed_at = Date.now();
@@ -52,7 +52,7 @@ two_faSchema.pre("save", async function (next) {
 });
 
 two_faSchema.pre("save", async function (next) {
-  if (!this.isModified("otp.is_enabled")) return next();
+  if (!this.isModified("otp.is_enabled") || this.isNew) return next();
 
   // Assign date of enabling OTP feature
   this.otp.is_changed_at = Date.now();

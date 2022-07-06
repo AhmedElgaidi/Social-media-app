@@ -21,7 +21,11 @@ router
 router
   .route("/login")
   .get(authControllers.login_GET)
-  .post(getDeviceInfo, authControllers.login_POST);
+  .post(
+    getDeviceInfo,
+    authControllers.login_POST,
+    authControllers.generateSendOTP
+  );
 
 router.route("/verify-email/:token").post(authControllers.verifyAccount_POST);
 
@@ -95,6 +99,12 @@ router
   .post(protect, is_account_active, authControllers.enableOTP_POST)
   .delete(protect, is_account_active, authControllers.disableOTP_DELETE);
 
+router
+  .route("/2fa/otp/verify")
+  .get(authControllers.otpPage_GET)
+  .post(authControllers.verifyOTP_POST);
+
+router.route("/2fa/otp/resend").post(authControllers.re_generate_send_OTP_POST);
 //=======================================
 
 // Export my router instance

@@ -27,6 +27,7 @@ const {
 const correct_password = require("../helpers/password");
 
 const speakeasy = require("speakeasy");
+const is_otp_match = require("../helpers/is_otp_match");
 //======================================================================
 
 // My controllers
@@ -217,6 +218,26 @@ const login_POST = async (req, res, next) => {
         "Welcome back!, Your account was deactivated. So, we sent you an account activation link to proceed!!",
     });
   }
+
+  ////////=========================================================
+  // Check for 2fa feature
+  // (1) If TOTP is enabled
+  const is_totp_enabled = user.account.two_fa.totp.is_enabled;
+  if (is_totp_enabled) {
+    // create a middleware for this feature
+    return next();
+  }
+
+  // (2) If OTP is enabled
+  const is_otp_enabled = user.account.two_fa.otp.is_enabled;
+  if (is_otp_enabled) {
+    req.user = user;
+    return next();
+  }
+
+  ////////=========================================================
+  // These steps should be done when there is no 2fa method enabled and after
+  // every successful verification 2fa method used.
 
   // (5) Create access and refresh token
   const access_token = await create_access_token(user.id);
@@ -884,7 +905,6 @@ const enableOTP_POST = async (req, res, next) => {
   res.status(200).json({
     name: "Success",
     description: "Congrats, you enabled a 2fa method (OTP).",
-    user,
   });
 };
 
@@ -923,33 +943,208 @@ const disableOTP_DELETE = async (req, res, next) => {
   });
 };
 
-// complete from here, generate and verify OTP / we just enabled/disabled the otp feature!!!
-// const myFunc = () => {
+const generateSendOTP = async (req, res, next) => {
+  // (1) Generate otp (random 6 digits)
+  const otp = Math.floor(100000 + Math.random() * 900000);
 
-//   // () Generate the OTP number
-//   // const otp = Math.floor(1000 + Math.random() * 900000);
-//   // console.log("otp: ", otp);
-//   // const user = await User.findById(req.userId).select({
-//   //   "account.two_fa.otp": 1,
-//   // });
-//   // user.account.two_fa.otp.value = otp;
-//   // await user.save();
-//   // res.status(200).json({
-//   //   name: "Success",
-//   //   description:
-//   //     "Please, check your mailbox, we sent you a link which is only valid for 15 minutes.",
-//   // });
+  // (2) Get user document from request
+  let user = req.user;
 
-//   // When i receive the mailbox (6 digits)
-//   // check it exists on the request
-//   // hash it and compare with saved hashed one
-//   // check it's associated to the user
-//   // check it's expiry. expires_at < Date.now() then its' expired!!!
+  // (3) Assign the otp code to user document
+  user.account.two_fa.otp.value = otp;
 
-// }
-// const verifyOTP_POST = (req, res, next) => {};
-// What if the token is expired? (show him button with re-send)
-// resend endpoint "/2fa/otp/resend"
+  // (4) Save updated user document
+  await user.save({ validateBeforeSave: false });
+
+  // (5) Setup and send email with OTP code
+  await sendEmail({
+    email: user.account.email.value,
+    subject: "OTP Code",
+    message: `Hello, there.\nThis is your ${otp} otp code, you have to provide it to verify your login attempt (Only valid for 15 min).`,
+  });
+
+  // (5) Inform frontend with the status
+  res.status(200).json({
+    name: "Success",
+    description:
+      "Please, check your mailbox. To verify your identity. So, you can log in",
+  });
+  //--------------------------------
+  // generate the access and refresh tokens
+  // save user document
+  // inform frontend
+};
+
+const otpPage_GET = (req, res, next) => {
+  res
+    .status(200)
+    .send(
+      "The page where user enters his email otp code and wait for it's verification"
+    );
+};
+
+const verifyOTP_POST = async (req, res, next) => {
+  // (1) Get userId and otp from request
+  const { userId, otp } = req.body;
+
+  // If ID is not found
+  if (!userId) {
+    return res.status(404).json({
+      name: "Not Found",
+      description: "We can't find the user ID.",
+    });
+  }
+
+  // IF otp is not found
+  if (!otp) {
+    return res.status(404).json({
+      name: "Not Found",
+      description: "We can't find the otp.",
+    });
+  }
+
+  // If otp length isn't correct, we don't have to check it in our db, right!
+  if (otp.toString().length != 6) {
+    res.status(422).json({
+      name: "Invalid Input",
+      description: "This otp length can't be correct!",
+    });
+  }
+
+  // (2) Check user by it' ID in our DB
+  const user = await User.findById(userId).select({
+    "account.two_fa.otp": 1,
+  });
+
+  // If user not found
+  if (!user) {
+    res.status(422).json({
+      status: "Invalid Input",
+      description: "We could find any user with this given ID.",
+    });
+  }
+
+  // (3) Check if user has this token
+  const otp_found = user.account.two_fa.otp.value;
+
+  // If otp is not found in DB
+  if (!otp_found) {
+    res.status(404).json({
+      name: "Not Found",
+      description: "We could't find any otp code assigned to this user.",
+    });
+  }
+
+  // (4) Check if otp against saved otp in our DB
+  const is_match = await is_otp_match(otp, otp_found);
+
+  // NO match?
+  if (!is_match) {
+    res.status(422).json({
+      name: "Invalid Input",
+      description: "This given otp didn't match with our sent otp.",
+    });
+  }
+
+  // (5) Check if it's expired
+  const is_otp_expired = user.account.two_fa.otp.expires_at < Date.now();
+
+  // IF it's expired
+  if (is_otp_expired) {
+    // (1) Delete otp from user document
+    user.account.two_fa.otp.value = undefined;
+    user.account.two_fa.otp.expires_at = undefined;
+    user.account.two_fa.otp.created_at = undefined;
+
+    // (2) Save it in DB
+    await user.save();
+    return res.status(422).json({
+      name: "Invalid Input",
+      description:
+        "This otp is already expired, click the resend button to send you a new valid one!",
+    });
+  }
+
+  // (6) Delete the otp from user document, so he/she can't use it again even it's valid (one time use!)
+  user.account.two_fa.otp.value = undefined;
+  user.account.two_fa.otp.expires_at = undefined;
+  user.account.two_fa.otp.created_at = undefined;
+
+  // (7) Save user document
+  await user.save();
+
+  // (8) Inform frontend with the status
+  res.send("Congrats, you now can log in and access our private resources!!");
+  // TODO:  put  the last code part in login controller.
+};
+
+const re_generate_send_OTP_POST = async (req, res, next) => {
+  // (1) Get userId from request
+  const { userId } = req.body;
+
+  // If not found in request
+  if (!userId) {
+    return res.status(404).json({
+      name: "Not Found",
+      description: "You have to send your ID.",
+    });
+  }
+
+  // (2) Check user in our DB
+  const user = await User.findById(userId).select({
+    "account.two_fa.otp": 1,
+    "account.email": 1,
+  });
+
+  // If not found in DB
+  if (!userId) {
+    return res.status(404).json({
+      name: "Not Found",
+      description: "We could't find any user with this ID in our database",
+    });
+  }
+  console.log(user);
+
+  // (3) Check expiration of saved otp in our DB
+  // If expires_at field is undefined, it means it's deleted before!!
+  if (user.account.two_fa.otp.expires_at != undefined) {
+    // if it's not deleted, then check it's value is expired or not
+    const is_otp_expired = user.account.two_fa.otp.expires_at < Date.now();
+
+    // If it's not expired
+    if (!is_otp_expired) {
+      const remaining = user.account.two_fa.otp.expires_at.getMinutes();
+
+      return res.status(400).json({
+        name: "Bad request",
+        description: `The sent otp to your mailbox is not expired yet, ${remaining} minutes remaining.`,
+      });
+    }
+  }
+
+  // (4) Generate a new otp code
+  const otp = Math.floor(100000 + Math.random() * 900000);
+
+  // (5) Assign the otp code to user document
+  user.account.two_fa.otp.value = otp;
+
+  // (6) Save updated user document
+  await user.save({ validateBeforeSave: false });
+
+  // (7) Setup and send email with OTP code
+  await sendEmail({
+    email: user.account.email.value,
+    subject: "OTP Code",
+    message: `Hello, there.\nThis is your ${otp} otp code, you have to provide it to verify your login attempt (Only valid for 15 min).`,
+  });
+
+  // (5) Inform frontend with the status
+  res.status(200).json({
+    name: "Success",
+    description:
+      "Please, check your mailbox, we have sent you another otp code instead of the expired one.",
+  });
+};
 //======================================================================
 // Export our controllers
 module.exports = {
@@ -978,5 +1173,8 @@ module.exports = {
   disableTOTP_DELETE,
   enableOTP_POST,
   disableOTP_DELETE,
-  // verifyOTP_POST,
+  generateSendOTP,
+  otpPage_GET,
+  verifyOTP_POST,
+  re_generate_send_OTP_POST,
 };
