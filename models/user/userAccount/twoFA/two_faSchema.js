@@ -8,6 +8,10 @@ const two_faSchema = new Schema({
   totp: {
     temp_secret: String,
     secret: String,
+    is_enabled: {
+      type: Boolean,
+      default: false
+    }
   },
 });
 

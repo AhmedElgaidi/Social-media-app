@@ -756,7 +756,7 @@ const generateSecretTOTP_POST = async (req, res, next) => {
 
   // (2) Get user document
   const user = await User.findById(req.userId).select({
-    "account.two_fa": 1,
+    "account.two_fa.totp": 1,
   });
 
   // (3) Check if the user already has a secret
@@ -802,7 +802,7 @@ const verifyTOTP_POST = async (req, res, next) => {
   });
 
   // Check if the user already has a secret
-  if (user.account.two_fa.secret) {
+  if (user.account.two_fa.totp.secret) {
     res.status(422).json({
       name: "Invalid Input",
       description: "you already enabled this feature!!!",
@@ -818,9 +818,9 @@ const verifyTOTP_POST = async (req, res, next) => {
 
   // If verification failed
   if (!isVerified) {
-    res.status(422).json({
+    return res.status(422).json({
       name: "Invalid Input",
-      description: "Sorry, your given token is not valid.",
+      description: "Sorry, your given totp token is not valid.",
     });
   }
 
@@ -830,6 +830,9 @@ const verifyTOTP_POST = async (req, res, next) => {
 
   // (5) Delete the temp_secret field
   user.account.two_fa.totp.temp_secret = undefined;
+
+  // (6) make the totp is enabled
+  user.account.two_fa.totp.is_enabled = true;
 
   // (6) Save user document
   await user.save();
@@ -859,11 +862,12 @@ const disableTOTP_DELETE = async (req, res, next) => {
   // (5) Inform the frontend with the status
   res.status(200).json({
     status: "Success",
-    description: "You disabled the TOTP feature (keep in mind that you are less secure now!!)"
-  })
+    description:
+      "You disabled the TOTP feature (keep in mind that you are less secure now!!)",
+  });
 };
 
-// phone number + country number
+// method (2):  ()
 
 //======================================================================
 // Export our controllers
