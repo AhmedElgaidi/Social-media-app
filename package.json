@@ -39,6 +39,7 @@
     "nodemailer": "^6.7.5",
     "nodemon": "^2.0.16",
     "speakeasy": "^2.0.0",
+    "twilio": "^3.78.0",
     "validator": "^13.7.0",
     "winston": "^3.7.2"
   }

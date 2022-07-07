@@ -5,6 +5,9 @@ const authControllers = require("../controllers/auth.controllers");
 const protect = require("../middlewares/protect");
 const getDeviceInfo = require("../middlewares/getDeviceInfo");
 const is_account_active = require("../middlewares/isAccountActive");
+const {
+  AuthCallsIpAccessControlListMappingContext,
+} = require("twilio/lib/rest/api/v2010/account/sip/domain/authTypes/authCallsMapping/authCallsIpAccessControlListMapping");
 //======================================
 
 // Let's create our express router instance
@@ -24,7 +27,8 @@ router
   .post(
     getDeviceInfo,
     authControllers.login_POST,
-    authControllers.generateSendOTP
+    // authControllers.generateSendOTP,
+    // authControllers.generateSendSMS_POST
   );
 
 router.route("/verify-email/:token").post(authControllers.verifyAccount_POST);
@@ -91,22 +95,41 @@ router
 
 router
   .route("/2fa/totp/verify")
-  .post(protect, is_account_active, authControllers.verifyTOTP_during_setup_POST);
+  .get(protect, is_account_active, authControllers.totpVerify_GET)
+  .post(
+    protect,
+    is_account_active,
+    authControllers.verifyTOTP_during_setup_POST
+  );
 
 router.route("/totp/verify").post(authControllers.verifyTOTP_during_login_POST);
 
 // OTP
 router
   .route("/2fa/otp")
+  .get(protect, is_account_active, authControllers.otpPage_during_setup_GET)
   .post(protect, is_account_active, authControllers.enableOTP_POST)
   .delete(protect, is_account_active, authControllers.disableOTP_DELETE);
 
 router
   .route("/2fa/otp/verify")
-  .get(authControllers.otpPage_GET)
+  .get(authControllers.otpPage_during_verifying_GET)
   .post(authControllers.verifyOTP_POST);
 
 router.route("/2fa/otp/resend").post(authControllers.re_generate_send_OTP_POST);
+
+// SMS
+router
+  .route("/2fa/sms")
+  .get(protect, is_account_active, authControllers.smsPage_during_setup_GET)
+  .post(protect, is_account_active, authControllers.generateSendSMS_POST)
+  .delete(protect, is_account_active, authControllers.disableSMS_DELETE);
+
+router
+  .route("/2fa/sms/verify")
+  .get(protect, is_account_active, authControllers.smsPage_GET)
+  .post(protect, is_account_active, authControllers.verifySMS_POST);
+
 //=======================================
 
 // Export my router instance
