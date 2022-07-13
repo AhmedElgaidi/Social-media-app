@@ -183,9 +183,19 @@ const login_POST = async (req, res, next) => {
     });
   }
 
-  // TODO: check if he is verified or not
+  // (4) Check if he is verified or not
+  const is_account_verified = await user.account.email.is_verified;
 
-  // (4) Check if account is active or not
+  // If his account is not verified
+  if (!is_account_verified) {
+    return res.status(422).json({
+      name: "Invalid account status",
+      description:
+        "Your account is not verified yet!. Please, check your mail box",
+    });
+  }
+
+  // (5) Check if account is active or not
   const is_account_active = user.account.activation.is_account_active;
 
   // If user deactivated his account
@@ -223,29 +233,32 @@ const login_POST = async (req, res, next) => {
   }
 
   ////////=========================================================
-  // Check for 2fa methods
+  // (6) Check 2fa methods
+
   // (1) If TOTP is enabled
   const is_totp_enabled = user.account.two_fa.totp.is_enabled;
+
   if (is_totp_enabled) {
-    return res.status(301).redirect("/totp/verify");
+    return res.status(301).redirect("/api/v1/auth/totp/verify");
   }
 
   // (2) If OTP is enabled
   const is_otp_enabled = user.account.two_fa.otp.is_enabled;
-  console.log(is_otp_enabled);
+
   if (is_otp_enabled) {
-    return res.status(301).redirect("/2fa/otp/verify");
+    return res.status(301).redirect("/api/v1/auth/2fa/otp/verify");
   }
 
   // (3) If SMS is enabled
   const is_sms_enabled = user.account.two_fa.sms.is_enabled;
+
   if (is_sms_enabled) {
-    return res.status(301).redirect("/2fa/sms");
+    return res.status(301).redirect("/api/v1/auth/2fa/sms");
   }
 
   ////////=========================================================
-  // These steps should be done when there is no 2fa method enabled and after
-  // every successful verification 2fa method used.
+  // [Don't forget]: These steps (giveAccess function) should be done when there is no 2fa method enabled
+  //  and after every successful identity verification 2fa method used.
   await giveAccess({ user, req, res });
 };
 
@@ -736,14 +749,15 @@ const allTwoFactorAuthenticationMethods_GET = (req, res, next) => {
   res
     .status(200)
     .send(
-      "The page where the user choose his preferred method of having 2fa in his account. \nThe methods i'm working on are: \n- authenticator app code (google authenticator) \n- text message(eg. six digits) \n- security question \n- send code to the mailbox"
+      "The page where the user choose his preferred 2FA method in his account. \nThe methods i'm working on are: \n- authenticator app code (google authenticator) \n- text message(eg. six digits) \n- security question \n- send code to the mailbox"
     );
 };
 
 // method (1): TOTP (Time-based One-Time Password)
 // we need to do this during setup and do the verifying part again when we need that.
+// (1) Generate TOTP
 const generateSecretTOTP_POST = async (req, res, next) => {
-  // (1) Generate the secret
+  // (1) Generate the temp_secret
   const temp_secret = speakeasy.generateSecret();
 
   // (2) Get user document
@@ -751,29 +765,49 @@ const generateSecretTOTP_POST = async (req, res, next) => {
     "account.two_fa.totp": 1,
   });
 
-  // (3) Check if the user already has a secret
+  // (3) Check if the user already has a secret/ already enabled this feature
   if (user.account.two_fa.totp.secret) {
-    res.status(422).json({
+    return res.status(422).json({
       name: "Invalid Input",
       description: "you already enabled this feature!!!",
     });
   }
-  // (4) Assign the temp_secret to the user object
+
+  // (4) Check if user already has a temp_secret
+  const is_temp_secret_found = user.account.two_fa.totp.temp_secret;
+
+  if (is_temp_secret_found) {
+    return res
+      .status(301)
+      .redirect("/api/v1/auth/2fa/totp/scan/" + is_temp_secret_found);
+  }
+
+  // (5) Assign the temp_secret to the user object
   user.account.two_fa.totp.temp_secret = temp_secret.base32;
 
-  // (5) Save user document
+  // (6) Save user document
   await user.save();
 
-  // (6) send the secret to the front-end to generate a qrcode based on it. So the user can scan it and give us
+  // (7) send the secret to the front-end to generate a qrcode based on it. So the user can scan it and give us
   // the 6 digits resulted from any authenticating app such as: Google authenticator
   // [NOTE]: This would be the first and last time to share the secret (It should be saved on the DB)!!!!
-  res.send({
-    message:
-      "The frontend should use this given secret and create a QR code based on it, so the user can scan it and send back the generated digits.",
-    secret: temp_secret.base32,
+  res.status(301).redirect("/api/v1/auth/2fa/totp/scan/" + temp_secret.base32);
+};
+// (2) Scan Secret
+const scanTOTP_qrCode_GET = (req, res, next) => {
+  // (1) Get qrcode from request
+  const qrcode = req.params.qrcode;
+
+  // (2) Send qrcode to frontend to generate for user a qrcode to be scanned
+  res.status(200).json({
+    url: req.url,
+    "QR code": qrcode,
+    description:
+      "The front end should use this secret and create a qrcode for user to scan!!!",
   });
 };
 
+// (2) Verify TOTP
 const totpVerify_GET = (req, res, next) => {
   res
     .status(200)
@@ -781,6 +815,7 @@ const totpVerify_GET = (req, res, next) => {
       "The page where you enter the code generated from you authenticator app."
     );
 };
+
 const verifyTOTP_during_setup_POST = async (req, res, next) => {
   // (1) Get TOTP token
   const { token } = req.body;
@@ -794,20 +829,32 @@ const verifyTOTP_during_setup_POST = async (req, res, next) => {
     });
   }
 
-  // (2) Get user document
+  // (2) Get user document from DB
   const user = await User.findById(req.userId).select({
     "account.two_fa.totp": 1,
   });
 
-  // Check if the user already has a secret
-  if (user.account.two_fa.totp.secret) {
-    res.status(422).json({
-      name: "Invalid Input",
-      description: "you already enabled this feature!!!",
+  // (3) Check if user is coming to verify. but, he didn't generate the secret!!
+  if (
+    !user.account.two_fa.totp.is_enabled &&
+    user.account.two_fa.totp.temp_secret === undefined
+  ) {
+    return res.status(400).json({
+      name: "Bad request",
+      description:
+        "You need to do 2 steps (Generate and scan a qrcode) before verifying it!!!",
     });
   }
 
-  // (3) Check the given token against the previously assigned temp_secret
+  // (4) Check if the user already has a secret (This means this feature is already enabled!!)
+  if (user.account.two_fa.totp.is_enabled) {
+    return res.status(400).json({
+      name: "Bad Request",
+      description: "You already enabled this feature!!!",
+    });
+  }
+
+  // (5) Check the given token against the previously assigned temp_secret
   const isVerified = speakeasy.totp.verify({
     secret: user.account.two_fa.totp.temp_secret,
     encoding: "base32",
@@ -822,32 +869,78 @@ const verifyTOTP_during_setup_POST = async (req, res, next) => {
     });
   }
 
-  // If everything is okay until now?
-  // (4) Save the temp_secret permanently
+  // If everything is okay until now? Then,
+  // (6) Update user document
+
+  // (1) Save the temp_secret permanently
   user.account.two_fa.totp.secret = user.account.two_fa.totp.temp_secret;
-
-  // (5) Delete the temp_secret field
+  // (2) Delete the temp_secret field
   user.account.two_fa.totp.temp_secret = undefined;
-
-  // (6) make the totp is enabled
+  // (3) make the totp is enabled
   user.account.two_fa.totp.is_enabled = true;
 
-  // (6) Save user document
+  // (7) Save user document
   await user.save();
 
-  // (7) Inform the frontend with the status
+  // (8) Inform the frontend with the status
   res.status(200).json({
     status: "Success",
     description: "Congrats, you successfully enabled 2FA feature (TOTP).",
   });
 };
+
+// (3) Disable TOTP
+const disableTOTP_DELETE = async (req, res, next) => {
+  // (1) Get userId from previous middleware
+  const userId = req.userId;
+
+  // (2) Get user document from DB
+  const user = await User.findById(userId).select({
+    "account.two_fa.totp": 1,
+  });
+
+  // (3) Check if this feature is already disabled
+  const is_TOTP_enabled = user.account.two_fa.totp.is_enabled;
+
+  if (!is_TOTP_enabled) {
+    return res.status(400).json({
+      name: "Bad request",
+      description: "This feature (TOTP) is already disabled!!!",
+    });
+  }
+
+  // (4) Update the user document
+  user.account.two_fa.totp.is_enabled = false;
+  user.account.two_fa.totp.temp_secret = undefined;
+  user.account.two_fa.totp.secret = undefined;
+
+  // (5) Save user document
+  await user.save();
+
+  // (6) Inform the frontend with the status
+  res.status(200).json({
+    status: "Success",
+    description:
+      "You disabled the TOTP feature (keep in mind that you are less secure now!!)",
+  });
+};
+
+// (4) Verify during login process
+const verifyTOTP_during_login_GET = (req, res, next) => {
+  return res.status(200).json({
+    url: req.url,
+    message:
+      "This is the page where the user should enter his code generated from his authenticator app in order to log in!!\n During login attempt!!",
+  });
+};
+
 const verifyTOTP_during_login_POST = async (req, res, next) => {
   // (1) Get TOTP token
   const { userId, token } = req.body;
 
   // If token is not found
   if (!token) {
-    res.status(404).json({
+    return res.status(404).json({
       name: "Not Found",
       description:
         "Please, send your token generated from your authenticator app!!",
@@ -855,28 +948,20 @@ const verifyTOTP_during_login_POST = async (req, res, next) => {
   }
 
   // If userId is not found
-  if (!token) {
-    res.status(404).json({
+  if (!userId) {
+    return res.status(404).json({
       name: "Not Found",
       description: "Please, send your ID!!",
     });
   }
 
-  // (2) Get user document
+  // (2) Get user document from DB
   const user = await User.findById(userId).select({
     "account.two_fa.totp": 1,
     "account.session": 1,
   });
 
-  // (3) Check if the user doesn't have a secret
-  if (!user.account.two_fa.totp.is_enabled) {
-    res.status(422).json({
-      name: "Invalid Input",
-      description: "Sorry, you don't have this 2fa method (TOTP) enabled.",
-    });
-  }
-
-  // (4) Check the given token against the stored secret
+  // (3) Check the given token against the stored secret
   const isVerified = speakeasy.totp.verify({
     secret: user.account.two_fa.totp.secret,
     encoding: "base32",
@@ -891,30 +976,8 @@ const verifyTOTP_during_login_POST = async (req, res, next) => {
     });
   }
 
-  // Give access
+  // (4) Give access
   await giveAccess({ user, req, res });
-};
-const disableTOTP_DELETE = async (req, res, next) => {
-  // (1) Get userId from previous middleware
-  const userId = req.userId;
-
-  // (2) Get user document from DB
-  const user = await User.findById(userId).select({
-    "account.two_fa.totp": 1,
-  });
-
-  // (3) Update the user document
-  user.account.two_fa.totp = undefined;
-
-  // (4) Save user document
-  await user.save();
-
-  // (5) Inform the frontend with the status
-  res.status(200).json({
-    status: "Success",
-    description:
-      "You disabled the TOTP feature (keep in mind that you are less secure now!!)",
-  });
 };
 
 // method (2): Email him OTP code  (One-Time Password)
@@ -1409,7 +1472,9 @@ module.exports = {
   resetPassword_POST,
   allTwoFactorAuthenticationMethods_GET,
   generateSecretTOTP_POST,
+  scanTOTP_qrCode_GET,
   verifyTOTP_during_setup_POST,
+  verifyTOTP_during_login_GET,
   verifyTOTP_during_login_POST,
   totpVerify_GET,
   disableTOTP_DELETE,

@@ -5,9 +5,6 @@ const authControllers = require("../controllers/auth.controllers");
 const protect = require("../middlewares/protect");
 const getDeviceInfo = require("../middlewares/getDeviceInfo");
 const is_account_active = require("../middlewares/isAccountActive");
-const {
-  AuthCallsIpAccessControlListMappingContext,
-} = require("twilio/lib/rest/api/v2010/account/sip/domain/authTypes/authCallsMapping/authCallsIpAccessControlListMapping");
 //======================================
 
 // Let's create our express router instance
@@ -24,15 +21,11 @@ router
 router
   .route("/login")
   .get(authControllers.login_GET)
-  .post(
-    getDeviceInfo,
-    authControllers.login_POST,
-    // authControllers.generateSendOTP,
-    // authControllers.generateSendSMS_POST
-  );
+  .post(getDeviceInfo, authControllers.login_POST);
 
 router.route("/verify-email/:token").post(authControllers.verifyAccount_POST);
 
+// Just for testing stuff
 router
   .route("/write-query")
   .get(
@@ -79,6 +72,7 @@ router
   .post(authControllers.resetPassword_POST)
   .get(authControllers.resetPassword_GET);
 
+// Get all 2FA methods that user might enable
 router
   .route("/2fa")
   .get(
@@ -87,11 +81,15 @@ router
     authControllers.allTwoFactorAuthenticationMethods_GET
   );
 
-// TOTP
+// (1) TOTP
 router
   .route("/2fa/totp")
   .post(protect, is_account_active, authControllers.generateSecretTOTP_POST)
   .delete(protect, is_account_active, authControllers.disableTOTP_DELETE);
+
+router
+  .route("/2fa/totp/scan/:qrcode")
+  .get(protect, is_account_active, authControllers.scanTOTP_qrCode_GET);
 
 router
   .route("/2fa/totp/verify")
@@ -102,7 +100,10 @@ router
     authControllers.verifyTOTP_during_setup_POST
   );
 
-router.route("/totp/verify").post(authControllers.verifyTOTP_during_login_POST);
+router
+  .route("/totp/verify")
+  .get(authControllers.verifyTOTP_during_login_GET)
+  .post(authControllers.verifyTOTP_during_login_POST);
 
 // OTP
 router
