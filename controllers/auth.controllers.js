@@ -929,6 +929,7 @@ const disableTOTP_DELETE = async (req, res, next) => {
 const verifyTOTP_during_login_GET = (req, res, next) => {
   return res.status(200).json({
     url: req.url,
+    "2FA method": "TOTP",
     message:
       "This is the page where the user should enter his code generated from his authenticator app in order to log in!!\n During login attempt!!",
   });
@@ -980,109 +981,68 @@ const verifyTOTP_during_login_POST = async (req, res, next) => {
   await giveAccess({ user, req, res });
 };
 
+//---------------------------------------------------------------
+
 // method (2): Email him OTP code  (One-Time Password)
-const otpPage_during_setup_GET = (req, res, next) => {
-  res.status(200).send("The page where you enter sent code over email.");
-};
-const enableOTP_POST = async (req, res, next) => {
-  // (1) Get userId from protect middleware
-  const userId = req.userId;
 
-  // (2) Get user document
-  const user = await User.findById(userId).select({
-    "account.two_fa.otp": 1,
-  });
-
-  // If it's already enabled
-  if (user.account.two_fa.otp.is_enabled) {
-    res.status(422).json({
-      status: "Invalid Input",
-      description: "This feature (OTP) is already enabled",
-    });
-  }
-
-  // (3) Update user document (enable otp)
-  user.account.two_fa.otp.is_enabled = true;
-
-  // (4) Save user document
-  await user.save();
-
-  // (5) Inform frontend with the status
-  res.status(200).json({
-    name: "Success",
-    description: "Congrats, you enabled a 2fa method (OTP).",
-  });
-};
-
-const disableOTP_DELETE = async (req, res, next) => {
-  // (1) Get userId from protect middleware
-  const userId = req.userId;
-
-  // (2) Get user document
-  const user = await User.findById(userId).select({
-    "account.two_fa.otp": 1,
-  });
-
-  // If it's already disabled
-  if (!user.account.two_fa.otp.is_enabled) {
-    res.status(422).json({
-      name: "Invalid Input",
-      description: "This feature (OTP) is already disabled.",
-    });
-  }
-
-  // (3) Update user document (disable otp)
-  user.account.two_fa.otp.is_enabled = false;
-  user.account.two_fa.otp.value = undefined;
-  user.account.two_fa.otp.created_at = undefined;
-  user.account.two_fa.otp.expires_at = undefined;
-
-  // (4) Save user document
-  await user.save();
-
-  // (5) Inform frontend with the status
-  res.status(200).json({
-    name: "Success",
-    description:
-      "You disabled a 2fa method (OTP) successfully (Keep in mind, you are less secure now!!).",
-    user,
-  });
-};
-
+// (1) Enable
 const generateSendOTP_POST = async (req, res, next) => {
-  // (1) Generate otp (random 6 digits)
+  // (1) Get userId from previous middleware
+  const userId = req.userId;
+
+  // (2) Get user document from DB
+  const user = await User.findById(userId).select({
+    "account.two_fa.otp": 1,
+    "account.email": 1,
+  });
+
+  // Check if this feature is already enabled
+  if (user.account.two_fa.otp.is_enabled) {
+    return res.status(400).json({
+      name: "Bad Request",
+      description: "This 2FA method (OTP) is already enabled!",
+    });
+  }
+
+  // Check if he already has a valid otp code in his mail box
+  if (
+    user.account.two_fa.otp.value &&
+    user.account.two_fa.otp.expires_at > Date.now()
+  ) {
+    return res.status(400).json({
+      name: "Bad Request",
+      description:
+        "Please, check your mailbox. The OTP code sent to your mailbox is still valid!",
+    });
+  }
+
+  // (3) Generate otp (random 6 digits)
   const otp = Math.floor(100000 + Math.random() * 900000);
 
-  // (2) Get user document from request
-  let user = req.user;
-
-  // (3) Assign the otp code to user document
+  // (4) Assign the otp code to user document
   user.account.two_fa.otp.value = otp;
 
-  // (4) Save updated user document
+  // (5) Save updated user document
   await user.save({ validateBeforeSave: false });
 
-  // (5) Setup and send email with OTP code
+  // (6) Setup and send email with OTP code
   await sendEmail({
     email: user.account.email.value,
     subject: "OTP Code",
     message: `Hello, there.\nThis is your "${otp}" otp code, you have to provide it to verify your login attempt (Only valid for 15 min).`,
   });
 
-  // (5) Inform frontend with the status
-  res.status(200).json({
-    name: "Success",
-    description:
-      "Please, check your mailbox. To verify your identity. So, you can log in",
-  });
+  // (7) Redirect him to a page to verify this received otp code
+  res.status(301).redirect("/api/v1/auth/2fa/otp/verify");
 };
 
+// (2) Verify
 const otpPage_during_verifying_GET = (req, res, next) => {
-  res
-    .status(200)
-    .send(
-      "The page where user enters his email otp code and wait for it's verification"
-    );
+  res.status(200).json({
+    url: req.url,
+    "2FA method": "OTP",
+    message: "Please, send us the otp code sent to your mailbox!",
+  });
 };
 
 const verifyOTP_POST = async (req, res, next) => {
@@ -1113,7 +1073,7 @@ const verifyOTP_POST = async (req, res, next) => {
     });
   }
 
-  // (2) Check user by it' ID in our DB
+  // (2) Check user by it's ID in our DB
   const user = await User.findById(userId).select({
     "account.two_fa.otp": 1,
     "account.session": 1,
@@ -1168,15 +1128,54 @@ const verifyOTP_POST = async (req, res, next) => {
     });
   }
 
+  // If everything is okay. Then,
   // (6) Delete the otp from user document, so he/she can't use it again even it's valid (one time use!)
   user.account.two_fa.otp.value = undefined;
   user.account.two_fa.otp.expires_at = undefined;
   user.account.two_fa.otp.created_at = undefined;
+  user.account.two_fa.otp.is_enabled = true; // mark this feature as enabled
 
   // (7) Give him/her access
   await giveAccess({ user, req, res });
 };
 
+// (3) Disable
+const disableOTP_DELETE = async (req, res, next) => {
+  // (1) Get userId from protect middleware
+  const userId = req.userId;
+
+  // (2) Get user document
+  const user = await User.findById(userId).select({
+    "account.two_fa.otp": 1,
+  });
+
+  // If it's already disabled
+  if (!user.account.two_fa.otp.is_enabled) {
+    return res.status(400).json({
+      status: "Bad Request",
+      description: "This 2FA feature (OTP) is already disabled.",
+    });
+  }
+
+  // (3) Update user document (disable otp)
+  user.account.two_fa.otp.is_enabled = false;
+  user.account.two_fa.otp.value = undefined;
+  user.account.two_fa.otp.created_at = undefined;
+  user.account.two_fa.otp.expires_at = undefined;
+
+  // (4) Save user document
+  await user.save();
+
+  // (5) Inform frontend with the status
+  res.status(200).json({
+    name: "Success",
+    description:
+      "You disabled a 2fa method (OTP) successfully (Keep in mind, you are less secure now!!).",
+    user,
+  });
+};
+
+// (4) Resend OTP
 const re_generate_send_OTP_POST = async (req, res, next) => {
   // (1) Get userId from request
   const { userId } = req.body;
@@ -1202,35 +1201,39 @@ const re_generate_send_OTP_POST = async (req, res, next) => {
       description: "We could't find any user with this ID in our database",
     });
   }
-  console.log(user);
 
-  // (3) Check expiration of saved otp in our DB
-  // If expires_at field is undefined, it means it's deleted before!!
-  if (user.account.two_fa.otp.expires_at != undefined) {
-    // if it's not deleted, then check it's value is expired or not
-    const is_otp_expired = user.account.two_fa.otp.expires_at < Date.now();
-
-    // If it's not expired
-    if (!is_otp_expired) {
-      const remaining = user.account.two_fa.otp.expires_at.getMinutes();
-
-      return res.status(400).json({
-        name: "Bad request",
-        description: `The sent otp to your mailbox is not expired yet, ${remaining} minutes remaining.`,
-      });
-    }
+  // (3) Check if this feature is already enabled
+  if (user.account.two_fa.otp.is_enabled) {
+    return res.status(400).json({
+      name: "Bad Request",
+      description: "This 2FA method (OTP) is already enabled!",
+    });
   }
 
-  // (4) Generate a new otp code
+  // (4) Check if he already has a valid otp code in his mail box
+  if (
+    user.account.two_fa.otp.value &&
+    user.account.two_fa.otp.expires_at > Date.now()
+  ) {
+    return res.status(400).json({
+      name: "Bad Request",
+      description:
+        "Please, check your mailbox. The OTP code sent to your mailbox is still valid, we can't send you a new one when you already have a not expired one!",
+    });
+  }
+
+  // If everything is okay. Then,
+
+  // (5) Generate a new otp code
   const otp = Math.floor(100000 + Math.random() * 900000);
 
-  // (5) Assign the otp code to user document
+  // (6) Assign the otp code to user document
   user.account.two_fa.otp.value = otp;
 
-  // (6) Save updated user document
+  // (7) Save updated user document
   await user.save({ validateBeforeSave: false });
 
-  // (7) Setup and send email with OTP code
+  // (8) Setup and send email with OTP code
   await sendEmail({
     email: user.account.email.value,
     subject: "OTP Code",
@@ -1244,6 +1247,8 @@ const re_generate_send_OTP_POST = async (req, res, next) => {
       "Please, check your mailbox, we have sent you another otp code instead of the expired one.",
   });
 };
+
+//-------------------------------------------------------------------------------
 
 // method (3): Text message (send code as sms)
 const smsPage_during_setup_GET = (req, res, next) => {
@@ -1478,10 +1483,8 @@ module.exports = {
   verifyTOTP_during_login_POST,
   totpVerify_GET,
   disableTOTP_DELETE,
-  enableOTP_POST,
   disableOTP_DELETE,
   generateSendOTP_POST,
-  otpPage_during_setup_GET,
   verifyOTP_POST,
   otpPage_during_verifying_GET,
   re_generate_send_OTP_POST,

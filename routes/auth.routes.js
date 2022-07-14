@@ -108,8 +108,7 @@ router
 // OTP
 router
   .route("/2fa/otp")
-  .get(protect, is_account_active, authControllers.otpPage_during_setup_GET)
-  .post(protect, is_account_active, authControllers.enableOTP_POST)
+  .post(protect, is_account_active, authControllers.generateSendOTP_POST)
   .delete(protect, is_account_active, authControllers.disableOTP_DELETE);
 
 router
