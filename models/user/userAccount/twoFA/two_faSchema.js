@@ -87,7 +87,7 @@ two_faSchema.pre("save", async function (next) {
   if (this.sms.value) {
     this.sms.value = await bcrypt.hash(this.sms.value, 12); // 12 is the salt round
     this.sms.created_at = Date.now();
-    this.sms.expires_at = Date.now() + 30 * 60 * 1000; // m /s /ms = 15 minutes
+    this.sms.expires_at = Date.now() + 15 * 60 * 1000; // m /s /ms = 15 minutes
   // TODO:
   }
   next();

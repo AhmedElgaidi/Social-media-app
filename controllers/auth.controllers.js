@@ -1151,6 +1151,15 @@ const disableOTP_DELETE = async (req, res, next) => {
 
   // If it's already disabled
   if (!user.account.two_fa.otp.is_enabled) {
+    // (1) Update user document (delete created fields, in case he doesn't want to proceed)
+    user.account.two_fa.otp.value = undefined;
+    user.account.two_fa.otp.created_at = undefined;
+    user.account.two_fa.otp.expires_at = undefined;
+
+    // (2) Save user document
+    await user.save();
+
+    // (3) Inform frontend with the status
     return res.status(400).json({
       status: "Bad Request",
       description: "This 2FA feature (OTP) is already disabled.",
@@ -1255,7 +1264,7 @@ const smsPage_during_setup_GET = (req, res, next) => {
   res
     .status(200)
     .send(
-      "The page where you enter phone number and start to setup your sms as 2fa."
+      "The page where you enter phone number and start to setup your sms as 2fa method."
     );
 };
 
@@ -1306,20 +1315,27 @@ const generateSendSMS_POST = async (req, res, next) => {
     });
   }
 
-  // (5) Check if we already assigned his/her document a code
-  if (user.account.two_fa.sms.value != undefined) {
-    return res.status(422).json({
-      name: "Invalid Input",
-      description: "We already assigned and sent you a code in an SMS!!",
+  // (5) Check if he/ she already has a code and still valid
+  if (
+    user.account.two_fa.sms.value &&
+    user.account.two_fa.sms.expires_at > Date.now()
+  ) {
+    return res.status(400).json({
+      name: "Bad Request",
+      description:
+        "We already assigned and sent you a code in an SMS (It's still valid there!).",
     });
   }
+
+  // If everything is okay. Then,
 
   // (6) Generate a random 6 digits code
   const code = Math.floor(100000 + Math.random() * 900000);
   console.log("SMS code:", code);
 
-  // (7) Assign the code to the user document
+  // (7) Assign the code and phone number to the user document
   user.account.two_fa.sms.value = code;
+  user.account.two_fa.sms.phone.value = phone;
 
   // 8) Save user document
   await user.save();
@@ -1339,72 +1355,88 @@ const generateSendSMS_POST = async (req, res, next) => {
   //   body: `Hello, there.\nThis is your "${code}" 2fa (Only valid for 15 min).`,
   // });
 
-  // (10) Inform the frontend with the status
+  // (10) Redirect him. So he can verify the sent code!
+  res.status(301).redirect("/api/v1/auth/2fa/sms/verify");
+};
+
+const verifySMS_duringSetup_GET = (req, res, next) => {
   res.status(200).json({
-    name: "Success",
-    description:
-      "Please, send the received code to this endpoint /2fa/sms/verify .",
+    url: req.url,
+    message: "Please, send the received code as sms!",
   });
 };
 
-const smsPage_GET = (req, res, next) => {
-  res.status(200).send("The page where you enter sent code over SMS");
-};
-
-const verifySMS_POST = async (req, res, next) => {
+const verifySMS_duringSetup_POST = async (req, res, next) => {
   // (1) Get userId and code from request
   const { code } = req.body,
     userId = req.userId;
 
-  // If code is not sent in request
+  // If code is not found
   if (!code) {
-    res.status(404).json({
+    return res.status(404).json({
       name: "Not Found",
       description: "We can't find the code in the request.",
     });
   }
 
-  // (2) Get user document
+  // (2) Get user document from DB
   const user = await User.findById(userId).select({
     "account.two_fa.sms": 1,
   });
 
-  // (3) Get user saved hashed code
-  const hashedCode = user.account.two_fa.sms.value;
-
-  // If hashed code is undefined, it means user haven't assigned any code before
-  if (hashedCode == undefined) {
-    res.status(422).json({
-      name: "Invalid Input",
-      description:
-        "Sorry, you need to ask for code first from this endpoint /2fa/sms .",
-    });
-  }
-  // (4) Check the code against the saved code
-  const is_match = await is_phone_code_match(code, hashedCode);
-
-  // If code is not valid
-  if (!is_match) {
-    res.status(422).json({
-      name: "Invalid Input",
-      description: "Sorry, the given code is not valid",
-    });
-  }
-
-  // (5) check if this feature is already enabled
+  // (3) Check if this feature is already enabled
   const is_sms_enabled = user.account.two_fa.sms.is_enabled;
 
   // If it's already enabled
   if (is_sms_enabled) {
-    res.status(422).json({
+    return res.status(422).json({
       name: "Success",
       description: "This 2fa method (SMS) is already enabled in your account.",
     });
   }
 
+  // (4) Get user's saved hashed code
+  const hashedCode = user.account.two_fa.sms.value;
+
+  // If hashed code is undefined, it means the user is not assigned any code before!
+  if (hashedCode == undefined) {
+    res.status(422).json({
+      name: "Invalid Input",
+      description:
+        "Sorry, you need to ask first for code from this endpoint /2fa/sms by sending us your phone number.",
+    });
+  }
+
+  // (5) Check the code against the saved code in DB
+  const is_match = await is_phone_code_match(code, hashedCode);
+
+  // If code is not valid
+  if (!is_match) {
+    return res.status(422).json({
+      name: "Invalid Input",
+      description: "Sorry, the given code is not valid",
+    });
+  }
+
+  // (6) Check if the code is expired or not!!
+  if (user.account.two_fa.sms.expires_at < Date.now()) {
+    return res.status(400).json({
+      name: "Bad Request",
+      description:
+        "Your code is already expired. Please click the resend button to get new code!",
+    });
+  }
+
+  // If everything is okay. Then,
+
   // (6) If it's valid, then make phone verified and enable this 2fa feature
   user.account.two_fa.sms.phone.is_verified = true;
   user.account.two_fa.sms.is_enabled = true;
+
+  // (7) Delete the other fields
+  user.account.two_fa.sms.created_at = undefined;
+  user.account.two_fa.sms.expires_at = undefined;
+  user.account.two_fa.sms.value = undefined;
 
   // (7) Save user document
   await user.save();
@@ -1439,9 +1471,6 @@ const disableSMS_DELETE = async (req, res, next) => {
 
   // (3) Update user document
   user.account.two_fa.sms.is_enabled = false;
-  user.account.two_fa.sms.value = undefined;
-  user.account.two_fa.sms.expires_at = undefined;
-  user.account.two_fa.sms.created_at = undefined;
 
   // (4) Save user document
   await user.save();
@@ -1452,7 +1481,90 @@ const disableSMS_DELETE = async (req, res, next) => {
     description: "You have disabled this 2fa method (SMS) successfully.",
   });
 };
+const resendSMS_during_setup_POST = async (req, res, next) => {
+  // (1) Get userId from previous middleware
+  const userId = req.userId;
 
+  // (2) Get user document from DB
+  const user = await User.findById(userId).select({
+    "account.two_fa.sms": 1,
+  });
+
+  // (3) Check if it's already enabled
+  if (user.account.two_fa.sms.is_enabled) {
+    return res.status(400).json({
+      name: "Bad Request",
+      description: "You already enabled this feature as 2fa (Code over SMS)!",
+    });
+  }
+
+  // (4) Check if he has a code and still valid
+  if (
+    user.account.two_fa.sms.value &&
+    user.account.two_fa.sms.expires_at > Date.now()
+  ) {
+    return res.status(400).json({
+      name: "Bad Request",
+      description:
+        "You already have a valid code. So, we can't send you new until it's expired!",
+    });
+  }
+
+  // If It's really expired. Then,
+
+  // (5) Generate The SMS code
+  const code = Math.floor(100000 + Math.random() * 900000);
+  console.log("SMS code:", code);
+
+  // (6) Update user document
+  user.account.two_fa.sms.value = code;
+
+  // (7) Save user document
+  await user.save();
+
+  // (8) Setup and send sms with the generated code
+  // Setup the client
+  const client = new twilio(
+    process.env.TWILIO_ACCOUNT_ID,
+    process.env.TWILIO_AUTH_TOKEN
+  );
+
+  // (9) Send the SMS
+  // TODO: We'll just see it in the console, to decrease call to twilio API
+  // await client.messages.create({
+  //   from: process.env.TWILIO_PHONE_NUMBER,
+  //   to: "+2" + phone,
+  //   body: `Hello, there.\nThis is your "${code}" 2fa (Only valid for 15 min).`,
+  // });
+
+  // (10) Redirect him. So he can verify the sent code!
+  res.status(301).redirect("/api/v1/auth/2fa/sms/verify");
+};
+
+// During login
+const generateSendSMS_duringLogin_GET = (req, res, next) => {
+  res.status(200).json({
+    url: req.url,
+    message:
+      "Please, click the button to proceed the SMS security layer as 2fa feature in order to log in!",
+  });
+};
+const generateSendSMS_duringLogin_POST = (req, res, next) => {
+  // generate and save and send the code
+  // redirect him
+};
+
+const verifySMS_duringLogin_GET = (req, res, next) => {
+  res.status(200).json({
+    url: req.url,
+    message:
+      "Please, send us the code sent to you over sms to verify your identity.",
+  });
+};
+
+const verifySMS_duringLogin_POST = (req, res, next) => {};
+
+const resendSMS_during_login_POST = (req, res, next) => {};
 //======================================================================
 // Export our controllers
 module.exports = {
@@ -1490,7 +1602,13 @@ module.exports = {
   re_generate_send_OTP_POST,
   smsPage_during_setup_GET,
   generateSendSMS_POST,
-  smsPage_GET,
-  verifySMS_POST,
+  verifySMS_duringSetup_GET,
+  verifySMS_duringSetup_POST,
   disableSMS_DELETE,
+  resendSMS_during_setup_POST,
+  generateSendSMS_duringLogin_GET,
+  generateSendSMS_duringLogin_POST,
+  verifySMS_duringLogin_GET,
+  verifySMS_duringLogin_POST,
+  resendSMS_during_login_POST,
 };

@@ -127,9 +127,16 @@ router
 
 router
   .route("/2fa/sms/verify")
-  .get(protect, is_account_active, authControllers.smsPage_GET)
-  .post(protect, is_account_active, authControllers.verifySMS_POST);
+  .get(protect, is_account_active, authControllers.verifySMS_duringSetup_GET)
+  .post(protect, is_account_active, authControllers.verifySMS_duringSetup_POST);
 
+router
+  .route("/2fa/sms/resend")
+  .post(
+    protect,
+    is_account_active,
+    authControllers.resendSMS_during_setup_POST
+  );
 //=======================================
 
 // Export my router instance
