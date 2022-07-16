@@ -120,23 +120,38 @@ router.route("/2fa/otp/resend").post(authControllers.re_generate_send_OTP_POST);
 
 // SMS
 router
-  .route("/2fa/sms")
+  .route("/2fa/sms/setup")
   .get(protect, is_account_active, authControllers.smsPage_during_setup_GET)
   .post(protect, is_account_active, authControllers.generateSendSMS_POST)
   .delete(protect, is_account_active, authControllers.disableSMS_DELETE);
 
 router
-  .route("/2fa/sms/verify")
+  .route("/2fa/sms/setup/verify")
   .get(protect, is_account_active, authControllers.verifySMS_duringSetup_GET)
   .post(protect, is_account_active, authControllers.verifySMS_duringSetup_POST);
 
 router
-  .route("/2fa/sms/resend")
+  .route("/2fa/sms/setup/resend")
   .post(
     protect,
     is_account_active,
     authControllers.resendSMS_during_setup_POST
   );
+
+// During login
+router
+  .route("/2fa/sms")
+  .get(authControllers.generateSendSMS_duringLogin_GET)
+  .post(authControllers.generateSendSMS_duringLogin_POST);
+
+router
+  .route("/2fa/sms/verify")
+  .get(authControllers.verifySMS_duringLogin_GET)
+  .post(authControllers.verifySMS_duringLogin_POST);
+
+router
+  .route("/2fa/sms/resend")
+  .post(authControllers.resendSMS_during_login_POST);
 //=======================================
 
 // Export my router instance

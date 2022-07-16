@@ -1,3 +1,4 @@
+const bcrypt = require("bcrypt");
 const twilio = require("twilio");
 // Our imports
 const User = require("../models/user/User");
@@ -33,6 +34,8 @@ const is_phone_code_match = require("../helpers/is_phone_code_match");
 const giveAccess = require("../helpers/giveAccess");
 
 //======================================================================
+// TODO: use lean() in the queries!
+
 // My controllers
 const signUp_GET = (req, res, next) => {
   res.json({
@@ -1260,6 +1263,7 @@ const re_generate_send_OTP_POST = async (req, res, next) => {
 //-------------------------------------------------------------------------------
 
 // method (3): Text message (send code as sms)
+// During setup
 const smsPage_during_setup_GET = (req, res, next) => {
   res
     .status(200)
@@ -1351,12 +1355,12 @@ const generateSendSMS_POST = async (req, res, next) => {
   // TODO: We'll just see it in the console, to decrease call to twilio API
   // await client.messages.create({
   //   from: process.env.TWILIO_PHONE_NUMBER,
-  //   to: "+2" + phone,
+  //   to: "+20" + phone,
   //   body: `Hello, there.\nThis is your "${code}" 2fa (Only valid for 15 min).`,
   // });
 
   // (10) Redirect him. So he can verify the sent code!
-  res.status(301).redirect("/api/v1/auth/2fa/sms/verify");
+  res.status(301).redirect("/api/v1/auth/2fa/sms/setup/verify");
 };
 
 const verifySMS_duringSetup_GET = (req, res, next) => {
@@ -1533,12 +1537,12 @@ const resendSMS_during_setup_POST = async (req, res, next) => {
   // TODO: We'll just see it in the console, to decrease call to twilio API
   // await client.messages.create({
   //   from: process.env.TWILIO_PHONE_NUMBER,
-  //   to: "+2" + phone,
+  //   to: "+20" + phone,
   //   body: `Hello, there.\nThis is your "${code}" 2fa (Only valid for 15 min).`,
   // });
 
   // (10) Redirect him. So he can verify the sent code!
-  res.status(301).redirect("/api/v1/auth/2fa/sms/verify");
+  res.status(301).redirect("/api/v1/auth/2fa/sms/setup/verify");
 };
 
 // During login
@@ -1546,25 +1550,253 @@ const generateSendSMS_duringLogin_GET = (req, res, next) => {
   res.status(200).json({
     url: req.url,
     message:
-      "Please, click the button to proceed the SMS security layer as 2fa feature in order to log in!",
+      "Please, click the button to send you the code over an sms message.",
   });
 };
-const generateSendSMS_duringLogin_POST = (req, res, next) => {
+
+const generateSendSMS_duringLogin_POST = async (req, res, next) => {
   // generate and save and send the code
   // redirect him
+  // (1) Get userId form request
+  const { userId } = req.body;
+
+  // If user ID not found
+  if (!userId) {
+    return res.status(404).json({
+      name: "ID Not Found",
+      description: "We can't find your id in the request!",
+    });
+  }
+
+  // (2) Get user from DB
+  const user = await User.findById(userId).select({
+    "account.two_fa.sms": 1,
+  });
+
+  // If user not found
+  if (!user) {
+    return res.status(404).json({
+      name: "User Not Found",
+      description: "Sorry, we can't find a user with this ID.",
+    });
+  }
+
+  // (3) Check if he/ she already has a code and still valid
+  if (
+    user.account.two_fa.sms.value &&
+    user.account.two_fa.sms.expires_at > Date.now()
+  ) {
+    return res.status(400).json({
+      name: "Bad Request",
+      description:
+        "We already assigned and sent you a code in an SMS (It's still valid there!).",
+    });
+  }
+
+  // If everything is okay. Then,
+
+  // (4) Generate a random 6 digits code
+  const code = Math.floor(100000 + Math.random() * 900000);
+  console.log("SMS code:", code);
+
+  // (5) Assign the code and phone number to the user document
+  user.account.two_fa.sms.value = code;
+
+  // (6)) Save user document
+  await user.save();
+
+  // (7) Setup and send sms with the generated code
+  // Setup the client
+  const client = new twilio(
+    process.env.TWILIO_ACCOUNT_ID,
+    process.env.TWILIO_AUTH_TOKEN
+  );
+
+  // (8) Send the SMS
+  // TODO: We'll just see it in the console, to decrease call to twilio API
+  // await client.messages.create({
+  //   from: process.env.TWILIO_PHONE_NUMBER,
+  //   to: "+20" + phone,
+  //   body: `Hello, there.\nThis is your "${code}" 2fa (Only valid for 15 min).`,
+  // });
+
+  // (9) Redirect him. So he can verify the sent code!
+  res.status(301).redirect("/api/v1/auth/2fa/sms/verify");
 };
 
 const verifySMS_duringLogin_GET = (req, res, next) => {
   res.status(200).json({
     url: req.url,
     message:
-      "Please, send us the code sent to you over sms to verify your identity.",
+      "Please, send us the code sent to you over sms message. So, we can use it to verify your identity.",
   });
 };
 
-const verifySMS_duringLogin_POST = (req, res, next) => {};
+const verifySMS_duringLogin_POST = async (req, res, next) => {
+  // (1) Get userId and code from request
+  const { userId, code } = req.body;
 
-const resendSMS_during_login_POST = (req, res, next) => {};
+  // If UserId not found
+  if (!userId) {
+    return res.status(404).json({
+      name: "ID Not Found",
+      description: "Sorry, we can't find the ID in the request.",
+    });
+  }
+
+  // If code not found
+  if (!code) {
+    return res.status(404).json({
+      name: "Code Not Found",
+      description: "Sorry, we can't find the code in the request",
+    });
+  }
+
+  // If code length is not true
+  if (code.toString().length != 6) {
+    return res.status(422).json({
+      name: "Invalid Code Length",
+      description: "The code length can't be true!",
+    });
+  }
+
+  // (2) Get user from DB
+  const user = await User.findById(userId).select({
+    "account.two_fa.sms": 1,
+  });
+
+  // If user not found
+  if (!user) {
+    return res.status(404).json({
+      name: "User Not Found",
+      description: "Sorry, we can't find a user with this ID.",
+    });
+  }
+
+  // (3) Check if this feature is enabled or not
+  const is_sms_enabled = user.account.two_fa.sms.is_enabled;
+
+  // If not enabled
+  if (!is_sms_enabled) {
+    return res.status(400).json({
+      name: "Bad Request",
+      description: "Sorry, this feature is not enabled in your account.",
+    });
+  }
+
+  // (4) Check for code expiration date
+  const is_code_expired = user.account.two_fa.sms.expires_at <= Date.now();
+
+  // If it's already expired
+  if (is_code_expired) {
+    return res.status(422).json({
+      name: "Code Expired",
+      description:
+        "Sorry, the code is already expired. You can ask for a new one by clicking the resend button.",
+    });
+  }
+
+  // (5) Check for code validity
+  const is_code_same = await bcrypt.compare(
+    code,
+    user.account.two_fa.sms.value
+  );
+
+  // If not same
+  if (!is_code_same) {
+    return res.status(422).json({
+      name: "Invalid Code",
+      description: "Sorry, the code doesn't match with the sent one.",
+    });
+  }
+
+  // If everything is okay. Then,
+
+  // (6) Give user access to our private resources
+  await giveAccess({ user, req, res });
+};
+
+const resendSMS_during_login_POST = async (req, res, next) => {
+  // (1) Get userId from request
+  const { userId } = req.body;
+
+  // If not found
+  if (!userId) {
+    return res.status(404).json({
+      name: "ID Not Found",
+      description: "Sorry, we can't find the ID in the request",
+    });
+  }
+
+  // (2) Get user form DB
+  const user = await User.findById(userId).select({
+    "account.two_fa.sms": 1,
+  });
+
+  // If user not found
+  if (!user) {
+    return res.status(404).json({
+      name: "User Not Found",
+      description: "Sorry, we cant' find a user with this ID",
+    });
+  }
+
+  // (3) Check if he/ she enabled this feature
+  const is_sms_enabled = user.account.two_fa.sms.is_enabled;
+
+  // If not enabled
+  if (!is_sms_enabled) {
+    return res.status(400).json({
+      name: "Bad Request",
+      description: "This feature is not enabled in your account.",
+    });
+  }
+
+  // (4) Check if he/ she already has a valid not expired code
+  if (
+    user.account.two_fa.sms.value &&
+    user.account.two_fa.sms.expires_at > Date.now()
+  ) {
+    return res.status(400).json({
+      name: "Bad Request",
+      description:
+        "We already assigned and sent you a code in an SMS (It's still valid there!).",
+    });
+  }
+
+  // If everything is okay. Then,
+
+  // (5) Generate The SMS code
+  const code = Math.floor(100000 + Math.random() * 900000);
+  console.log("SMS code:", code);
+
+  // (6) Update user document
+  user.account.two_fa.sms.value = code;
+
+  // (7) Save user document
+  await user.save();
+
+  // (8) Setup and send sms with the generated code
+  // Setup the client
+  const client = new twilio(
+    process.env.TWILIO_ACCOUNT_ID,
+    process.env.TWILIO_AUTH_TOKEN
+  );
+
+  // (9) Send the SMS
+  // TODO: We'll just see it in the console, to decrease call to twilio API
+  // await client.messages.create({
+  //   from: process.env.TWILIO_PHONE_NUMBER,
+  //   to: "+20" + phone,
+  //   body: `Hello, there.\nThis is your "${code}" 2fa (Only valid for 15 min).`,
+  // });
+
+  // (10) Redirect him to the verifying endpoint
+  res.status(301).redirect("/api/v1/auth/2fa/sms/verify");
+};
+
+// method (4): Security Question
+
 //======================================================================
 // Export our controllers
 module.exports = {
