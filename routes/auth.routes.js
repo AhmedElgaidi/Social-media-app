@@ -152,6 +152,28 @@ router
 router
   .route("/2fa/sms/resend")
   .post(authControllers.resendSMS_during_login_POST);
+
+// Security Question
+router
+  .route("/2fa/security-question")
+  .get(protect, is_account_active, authControllers.enable_security_question_GET)
+  .post(
+    protect,
+    is_account_active,
+    authControllers.enable_security_question_POST
+  )
+  .put(protect, is_account_active, authControllers.change_security_question_PUT)
+  .delete(
+    protect,
+    is_account_active,
+    authControllers.disable_security_question_DELETE
+  );
+
+router
+  .route("/2fa/security-question/verify")
+  .get(authControllers.verify_security_question_during_login_GET)
+  .post(authControllers.verify_security_question_during_login_POST);
+
 //=======================================
 
 // Export my router instance
