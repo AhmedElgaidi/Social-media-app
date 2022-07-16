@@ -235,7 +235,6 @@ const login_POST = async (req, res, next) => {
     });
   }
 
-  ////////=========================================================
   // (6) Check 2fa methods
 
   // (1) If TOTP is enabled
@@ -267,7 +266,7 @@ const login_POST = async (req, res, next) => {
       .status(301)
       .redirect("/api/v1/auth/2fa/security-question/verify");
   }
-  ////////=========================================================
+  
   // [Don't forget]: These steps (giveAccess function) should be done when there is no 2fa method enabled
   //  and after every successful identity verification 2fa method used.
   await giveAccess({ user, req, res });
@@ -756,12 +755,19 @@ const resetPassword_POST = async (req, res, next) => {
   });
 };
 
-const allTwoFactorAuthenticationMethods_GET = (req, res, next) => {
-  res
-    .status(200)
-    .send(
-      "The page where the user choose his preferred 2FA method in his account. \nThe methods i'm working on are: \n- authenticator app code (google authenticator) \n- text message(eg. six digits) \n- security question \n- send code to the mailbox"
-    );
+const allTwoFactorAuthenticationMethods_GET = async (req, res, next) => {
+  // (1) Get user from DB
+  const user = await User.findById(req.userId).select({ "account.two_fa": 1 });
+
+  // (2) Inform the frontend with the status
+  res.status(200).json({
+    "2fa methods": {
+      TOTP: user.account.two_fa.totp.is_enabled,
+      OTP: user.account.two_fa.otp.is_enabled,
+      "code over SMS": user.account.two_fa.sms.is_enabled,
+      "security question": user.account.two_fa.question.is_enabled,
+    },
+  });
 };
 
 // method (1): TOTP (Time-based One-Time Password)
@@ -988,7 +994,31 @@ const verifyTOTP_during_login_POST = async (req, res, next) => {
     });
   }
 
-  // (4) Give access
+  // (4) If there are any other security layers enabled (only remains OTP, SMS and the security question)
+  // Method (2) OTP
+  const is_otp_enabled = user.account.two_fa.otp.is_enabled;
+
+  if (is_otp_enabled) {
+    return res.status(301).redirect("/api/v1/auth/2fa/otp/verify");
+  }
+
+  // Method (3) Code over SMS
+  const is_sms_enabled = user.account.two_fa.sms.is_enabled;
+
+  if (is_sms_enabled) {
+    return res.status(301).redirect("/api/v1/auth/2fa/sms");
+  }
+
+  // Method (4) Security Question
+  const is_security_question_enabled = user.account.two_fa.question.is_enabled;
+
+  if (is_security_question_enabled) {
+    return res
+      .status(301)
+      .redirect("/api/v1/auth/2fa/security-question/verify");
+  }
+
+  // (5) Give access
   await giveAccess({ user, req, res });
 };
 
@@ -997,6 +1027,14 @@ const verifyTOTP_during_login_POST = async (req, res, next) => {
 // method (2): Email him OTP code  (One-Time Password)
 
 // (1) Enable
+const generateSendOTP_GET = (req, res, next) => {
+  res
+    .status(200)
+    .send(
+      "A page with a button to click to generate an OTP code and be sent to you."
+    );
+};
+
 const generateSendOTP_POST = async (req, res, next) => {
   // (1) Get userId from previous middleware
   const userId = req.userId;
@@ -1146,7 +1184,24 @@ const verifyOTP_POST = async (req, res, next) => {
   user.account.two_fa.otp.created_at = undefined;
   user.account.two_fa.otp.is_enabled = true; // mark this feature as enabled
 
-  // (7) Give him/her access
+  // (7) If there are any other security layers enabled (only remains sms and the security question)
+  // Method (3) Code over SMS
+  const is_sms_enabled = user.account.two_fa.sms.is_enabled;
+
+  if (is_sms_enabled) {
+    return res.status(301).redirect("/api/v1/auth/2fa/sms");
+  }
+
+  // Method (4) Security Question
+  const is_security_question_enabled = user.account.two_fa.question.is_enabled;
+
+  if (is_security_question_enabled) {
+    return res
+      .status(301)
+      .redirect("/api/v1/auth/2fa/security-question/verify");
+  }
+
+  // (8) Give him/her access
   await giveAccess({ user, req, res });
 };
 
@@ -1718,9 +1773,19 @@ const verifySMS_duringLogin_POST = async (req, res, next) => {
     });
   }
 
+  // (6) If there are any other security layers enabled (only remains the security question)
+  // Method (4) Security Question
+  const is_security_question_enabled = user.account.two_fa.question.is_enabled;
+
+  if (is_security_question_enabled) {
+    return res
+      .status(301)
+      .redirect("/api/v1/auth/2fa/security-question/verify");
+  }
+
   // If everything is okay. Then,
 
-  // (6) Give user access to our private resources
+  // (7) Give user access to our private resources
   await giveAccess({ user, req, res });
 };
 
@@ -2030,10 +2095,18 @@ const verify_security_question_during_login_POST = async (req, res, next) => {
 
   // If everything is okay. Then,
 
-  //(5) Give user access to our private resources
-  res.send(user);
-  // await giveAccess({ user, req, res });
+  //(6) Give user access to our private resources
+  await giveAccess({ user, req, res });
 };
+
+//-----------------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------------------
+// Email recovery options
+
+// (1) Recover codes
+
+// (2) Send email to a trusted email
+
 //======================================================================
 // Export our controllers
 module.exports = {
@@ -2065,6 +2138,7 @@ module.exports = {
   totpVerify_GET,
   disableTOTP_DELETE,
   disableOTP_DELETE,
+  generateSendOTP_GET,
   generateSendOTP_POST,
   verifyOTP_POST,
   otpPage_during_verifying_GET,
