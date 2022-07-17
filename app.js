@@ -48,7 +48,6 @@ app.all("*", (req, res, next) => {
   next();
 });
 
-
 // Our error handling and logging middlewares| It has to be after all middlewares
 app.use(logError);
 app.use(otherErrorScenarios);
@@ -57,3 +56,6 @@ app.use(returnError);
 //======================================================================
 
 module.exports = app;
+
+// TODO: Rate limit
+// TODO: Don't let fake ips to access api

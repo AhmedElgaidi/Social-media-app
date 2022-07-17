@@ -175,6 +175,33 @@ router
   .get(authControllers.verify_security_question_during_login_GET)
   .post(authControllers.verify_security_question_during_login_POST);
 
+//-----------------------------
+// Account recover options
+// Option (1)
+router
+  .route("/account-recovery/backup-codes")
+  .get(protect, is_account_active, authControllers.showBackupCodes_GET)
+  .post(protect, is_account_active, authControllers.generateBackupCodes_POST)
+  .delete(
+    protect,
+    is_account_active,
+    authControllers.disableBackupCodes_DELETE
+  );
+
+router
+  .route("/account-recovery/backup-codes/confirm")
+  .get(authControllers.confirmBackupCodes_GET)
+  .post( authControllers.confirmBackupCodes_POST);
+
+router
+  .route("/account-recovery/backup-codes/regenerate")
+  .get(authControllers.regenerateBackupCodes_GET)
+  .post(authControllers.regenerateBackupCodes_POST);
+
+router
+  .route("/account-recovery/backup-codes/verify")
+  .get(authControllers.verifyBackupCodes_GET)
+  .post(authControllers.verifyBackupCodes_POST);
 //=======================================
 
 // Export my router instance
