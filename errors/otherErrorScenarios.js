@@ -8,6 +8,12 @@ module.exports = (error, req, res, next) => {
     });
   }
   // (2) Cast Error
+  if(error.message.includes("Cast")) {
+    res.status(422).send({
+      name: "Invalid Input",
+      description: `This input (${error.value}) can't be correct!`,
+    });
+  }
 
   // (3) Validation Error
   if (error.message.includes("validation failed")) {

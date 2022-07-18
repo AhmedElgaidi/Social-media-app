@@ -36,26 +36,27 @@ const hashBackupCodes = async (codes) => {
 // (3)
 const is_given_backup_code_found = (givenCode, userCodes) => {
   // (1) create empty array
-  let index = 0,
+  let index = -1, // -1 => (Element is not found)
     result = [];
 
-  // (2) Compare given code with the saved hashed codes
-  result = userCodes.find((code, i) => {
-    bcrypt.compareSync(givenCode, code.code)
-    if (code) index = i;
+  // (2) Check the given code against our saved user hashed codes
+  for (let i = 0; i < userCodes.length; i++) {
+    // (1) Save result of comparison
+    let currentCode = bcrypt.compareSync(givenCode, userCodes[i].code);
 
-    console.log(code, i);
-  });
-  console.log("index: ", result);
-  // (3) Get index of matched code
-  // index = result.indexOf(true);
+    // (2) If result is true, then the element is found. So, save it's index!
+    if (currentCode) index = i;
 
-  // (4) Remove falsy values
-  // result = result.filter(Boolean);
-  console.log("result: ", result);
-  // (5) Return result and matched code index
+    // (3) Push element to the array
+    result.push(currentCode);
+  }
+
+  // (3) Remove falsy values
+  result = result.filter(Boolean);
+
+  // (4) Return result and matched code index
   if (result.length == 0) {
-    // It means no truthy values in the array
+    // It means no truthy values found in the array
     return {
       value: false,
       index,

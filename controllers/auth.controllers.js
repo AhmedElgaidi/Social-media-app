@@ -2137,8 +2137,15 @@ const showBackupCodes_GET = async (req, res, next) => {
   // (4) Inform frontend with the status
   res.status(200).json({
     url: req.url,
-    name: "Success",
-    user: user.account.recovery.methodOne,
+    user: user.account.recovery.methodOne.codes.map(
+      // to send only data about codes (used or not)
+      (code, i) =>
+        (code = {
+          code: i + 1,
+          is_used: code.is_used,
+          is_used_at: code.is_used_at,
+        })
+    ),
   });
 };
 
@@ -2173,7 +2180,7 @@ const generateBackupCodes_POST = async (req, res, next) => {
   const is_temp_codes_found = user.account.recovery.methodOne.temp_codes.length;
 
   // If they are found
-  if (is_temp_codes_found >= 1) {
+  if (is_temp_codes_found > 1) {
     return res.status(400).json({
       name: "Bad Request",
       description: "You already have a temporary backup codes!!",
@@ -2192,6 +2199,8 @@ const generateBackupCodes_POST = async (req, res, next) => {
     });
   }
 
+  // If everything is okay. Then,
+
   // (5) Generate temp_codes
   const temp_codes = await generateArrayOfRandom12DigitsAndChars();
 
@@ -2201,7 +2210,7 @@ const generateBackupCodes_POST = async (req, res, next) => {
   // (7) Save user document
   await user.save();
 
-  // (8) Redirect him to page so, he can see his generated temp_codes
+  // (8) Redirect him to page so, he can see his generated temp_codes and confirm them
   res
     .status(301)
     .redirect(
@@ -2284,26 +2293,26 @@ const confirmBackupCodes_GET = async (req, res, next) => {
     return res.status(400).json({
       name: "Bad Request",
       description:
-        "You haven't asked for backup codes generation to confirm it!!!",
+        "You haven't asked for backup codes generation. How do you want to confirm it!!!",
     });
   }
 
   res.json({
     url: req.url,
-    user,
+    generated_codes: user.account.recovery.methodOne.temp_codes,
   });
 };
 
 // (5) Confirm and save backup codes (POST)
 const confirmBackupCodes_POST = async (req, res, next) => {
   // (1) Get userId from previous middleware
-  const { userId } = req.body;
+  const { userId } = req.body || req.query;
 
   // If userId not found
   if (!userId) {
     return res.status(404).json({
       name: "ID Not Found",
-      description: "Sorry, we can't find the ID in the request.",
+      description: "Sorry, we can't find the ID in the request. bla bla bla",
     });
   }
 
@@ -2341,7 +2350,7 @@ const confirmBackupCodes_POST = async (req, res, next) => {
     return res.status(400).json({
       name: "Bad Request",
       description:
-        "You haven't asked for backup codes generation to confirm it!!!",
+        "You haven't asked for backup codes generation. How do you want to confirm it!!!",
     });
   }
 
@@ -2372,14 +2381,14 @@ const regenerateBackupCodes_GET = (req, res, next) => {
   res.status(200).json({
     url: req.url,
     description:
-      "The page with a regenerate button to click. Used in two cases(If you want to change the backup codes for any reason + There is only one valid code remaining and you need to generate new group of codes).",
+      "The page with a regenerate button to click. Used in two cases (If you want to change the backup codes for any reason (Compromised, lost, etc...) + There is no more valid codes remaining and you need to generate new group of codes to guarantee your future login attempts).",
   });
 };
 
 // (7) Regenerate backup codes (POST)
 const regenerateBackupCodes_POST = async (req, res, next) => {
-  // (1) Get userId from previous middleware
-  const { userId } = req.body;
+  // (1) Get userId from request
+  const { userId } = req.body || req.query;
 
   // If userId not found
   if (!userId) {
@@ -2410,7 +2419,7 @@ const regenerateBackupCodes_POST = async (req, res, next) => {
     return res.status(400).json({
       name: "Bad Request",
       description:
-        "Sorry, you can't regenerate a new backup codes when this feature is disabled or you haven't any old codes!",
+        "Sorry, you can't regenerate a new backup codes when this feature is already disabled.",
     });
   }
 
@@ -2430,7 +2439,9 @@ const regenerateBackupCodes_POST = async (req, res, next) => {
   // (7) Redirect him to the confirm code endpoint
   res
     .status(301)
-    .redirect("/api/v1/auth/account-recovery/backup-codes/confirm");
+    .redirect(
+      `/api/v1/auth/account-recovery/backup-codes/confirm?userId=${user.id}`
+    );
 };
 
 // (8) Verify backup codes (GET)
@@ -2441,6 +2452,10 @@ const verifyBackupCodes_GET = (req, res, next) => {
       "The page where you enter one of the previously given backup codes. So, you can have access and recover your account.",
   });
 };
+
+// @route POST api/bla/bla
+// @desc Verify backup code
+// @access
 
 // (9) Verify backup codes (POST)
 const verifyBackupCodes_POST = async (req, res, next) => {
@@ -2474,13 +2489,15 @@ const verifyBackupCodes_POST = async (req, res, next) => {
   // (2) Get user from DB
   const user = await User.findById(userId).select({
     "account.recovery.methodOne": 1,
+    "account.two_fa": 1,
+    "account.session": 1,
   });
 
   // If user not found
   if (!user) {
     return res.status(404).json({
       name: "User Not Found",
-      description: "Sorry, we can't find a user with the given ID",
+      description: "Sorry, we can't find a user associated with the given ID.",
     });
   }
 
@@ -2502,11 +2519,6 @@ const verifyBackupCodes_POST = async (req, res, next) => {
   const { value: is_given_code_found, index: given_code_index } =
     is_given_backup_code_found(code, backup_codes);
 
-  // -----------
-  console.log("one: ", is_given_code_found);
-  console.log("two: ", given_code_index);
-  // -----------
-
   // If given code doesn't found
   if (!is_given_code_found) {
     return res.status(422).json({
@@ -2515,7 +2527,7 @@ const verifyBackupCodes_POST = async (req, res, next) => {
     });
   }
 
-  // If given code is already used
+  // If given code is true but already used
   const is_code_used =
     user.account.recovery.methodOne.codes[given_code_index].is_used;
 
@@ -2536,27 +2548,26 @@ const verifyBackupCodes_POST = async (req, res, next) => {
   await user.save();
 
   // (7) Check the count of unused codes
-  // const countOfUnusedCodes = [
-  //   // Here, i'm using spread operator to convert object to array. So, i can count it.
-  //   ...user.account.recovery.methodOne.codes.filter(
-  //     (code) => code.is_used == false
-  //   ),
-  // ].length;
+  const countOfUnusedCodes = [
+    // Here, i'm using spread operator to convert object to array. So, i can count it.
+    ...user.account.recovery.methodOne.codes.filter(
+      (code) => code.is_used == false
+    ),
+  ].length;
 
-  // // If it was 1 (It means he/ she needs to generate new set of codes). So, we redirect him
-  // if (countOfUnusedCodes == 1) {
-  //   return res
-  //     .status(301)
-  //     .redirect("/api/v1/auth/account-recovery/backup-codes/regenerate");
-  // }
+  // If it was 0 (It means he/ she needs to generate new set of codes). So, we redirect him
+  if (countOfUnusedCodes == 0) {
+    return res
+      .status(301)
+      .redirect("/api/v1/auth/account-recovery/backup-codes/regenerate");
+  }
 
   // (8) Give user access to our private resources
   await giveAccess({ user, req, res });
 };
 
 //-----------------------------------------------------------------------------------------
-// - don't enable this feature unless at least 2 methods of 2FA are enabled.
-// The last code would be used > generate a new 10 backup codes
+
 // (2) Send an email to a trusted email
 
 //======================================================================
