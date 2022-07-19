@@ -191,7 +191,7 @@ router
 router
   .route("/account-recovery/backup-codes/confirm")
   .get(authControllers.confirmBackupCodes_GET)
-  .post( authControllers.confirmBackupCodes_POST);
+  .post(authControllers.confirmBackupCodes_POST);
 
 router
   .route("/account-recovery/backup-codes/regenerate")
@@ -202,6 +202,31 @@ router
   .route("/account-recovery/backup-codes/verify")
   .get(authControllers.verifyBackupCodes_GET)
   .post(authControllers.verifyBackupCodes_POST);
+
+// Option (2)
+router
+  .route("/account-recovery/trusted-email")
+  .get(protect, is_account_active, authControllers.generateTrustedEmail_GET)
+  .post(protect, is_account_active, authControllers.generateTrustedEmail_POST)
+  .put(protect, is_account_active, authControllers.changeTrustedEmail_PUT)
+  .delete(
+    protect,
+    is_account_active,
+    authControllers.disableTrustedEmail_DELETE
+  );
+
+router
+  .route("/account-recovery/trusted-email/verify/:userId/:token")
+  .get(
+    authControllers.verifyEnableTrustedEmail_GET
+  );
+
+// During login
+router
+  .route("/account-recovery/trusted-email/verify-during-login")
+  .get(authControllers.verifyTrustedEmail_during_login_GET)
+  .post(authControllers.verifyTrustedEmail_during_login_POST);
+
 //=======================================
 
 // Export my router instance

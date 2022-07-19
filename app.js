@@ -59,3 +59,4 @@ module.exports = app;
 
 // TODO: Rate limit
 // TODO: Don't let fake ips to access api
+// TODO: Cast error: user ID length has to be 24 chars, if not then error message.

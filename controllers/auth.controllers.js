@@ -39,6 +39,11 @@ const {
   is_given_backup_code_found,
 } = require("../helpers/backupCodes");
 
+const {
+  create_trusted_email_verification_token,
+  verify_trusted_email_verification_token,
+} = require("../helpers/tokens/trustedEmail");
+
 //======================================================================
 // TODO: use lean() in the queries!
 
@@ -2275,6 +2280,7 @@ const confirmBackupCodes_GET = async (req, res, next) => {
   const user = await User.findById(userId).select({
     "account.recovery.methodOne": 1,
   });
+  // .catch(err => res.send(err));
 
   // If user not found
   if (!user) {
@@ -2568,7 +2574,193 @@ const verifyBackupCodes_POST = async (req, res, next) => {
 
 //-----------------------------------------------------------------------------------------
 
-// (2) Send an email to a trusted email
+// (2) Send an email to a previously trusted assigned email
+
+// (1) send trusted email Page (GET)
+const generateTrustedEmail_GET = async (req, res, next) => {
+  // (1) Get userId from previous middleware
+  const userId = req.userId;
+
+  // (2) Get user form DB
+  const user = await User.findById(userId).select({
+    "account.recovery.methodTwo": 1,
+  });
+
+  res.status(200).json({
+    url: req.url,
+    description:
+      "A page with input field where the user sends us his trusted email.",
+    "method (2)": user.account.recovery.methodTwo,
+  });
+};
+
+// (2) Generate token and send it in an email to the given email (POST)
+const generateTrustedEmail_POST = async (req, res, next) => {
+  // (1) Get userId from previous middleware
+  const userId = req.userId;
+
+  // (2) Get trusted email from request
+  const { email } = req.body;
+
+  // If email not found
+  if (!email) {
+    return res.status(404).json({
+      name: "Trusted Email Not Found",
+      description: "Sorry, we can't find the trusted email in the request.",
+    });
+  }
+
+  // (3) Get user form DB
+  const user = await User.findById(userId).select({
+    "account.recovery.methodTwo": 1,
+  });
+
+  // (4) Check if this feature is enabled
+  const is_trusted_email_enabled = user.account.recovery.methodTwo.is_enabled;
+
+  // If disabled
+  if (is_trusted_email_enabled) {
+    return res.status(400).json({
+      name: "Bad Request",
+      description:
+        "You already have a trusted email. If you want to change it go to the change endpoint!",
+    });
+  }
+
+  // If everything is okay. Then,
+
+  // (5) Generate a token for trusted email verification
+  const token = await create_trusted_email_verification_token(user.id);
+
+  // (6) Update user document
+  user.account.recovery.methodTwo.email.verification_token = token;
+  user.account.recovery.methodTwo.email.temp_value = email;
+  // (7) Save user in DB
+  await user.save();
+
+  // (8) Setup email
+  const verificationUrl = `${req.protocol}://${process.env.HOST}:${process.env.PORT}/api/v1/auth/account-recovery/trusted-email/verify/${user.id}/${token}`;
+  const message = `Click to verify your email, ${verificationUrl}, you only have ${process.env.TRUSTED_EMAIL_VERIFICATION_TOKEN_SECRET_EXPIRES_IN}`;
+
+  // (9) Send email
+  // TODO: await sendEmail({
+  //   email,
+  //   subject: "Trusted Email verification link",
+  //   message,
+  // });
+  console.log("Verification url: ", verificationUrl);
+
+  // (10) Inform frontend with the status
+  res.status(200).json({
+    name: "Success",
+    description: "Please, check the mail box of the given trusted email",
+  });
+};
+
+// (3) verify and enable (GET)
+const verifyEnableTrustedEmail_GET = async (req, res, next) => {
+  // (1) Get params from request
+  const { userId, token } = req.params;
+
+  // If token is not found
+  if (!userId) {
+    return res.status(404).json({
+      name: "ID Not Found",
+      description: "Sorry, we can't find the ID in the request.",
+    });
+  }
+
+  // If token is not found
+  if (!token) {
+    return res.status(404).json({
+      name: "Token Not Found",
+      description:
+        "Sorry, we can't find the verification token in the request.",
+    });
+  }
+
+  // (2) Get user from DB
+  const user = await User.findById(userId).select({
+    "account.recovery.methodTwo": 1,
+  });
+
+  // If user is not found
+  if (!user) {
+    return res.status(404).json({
+      name: "User Not Found",
+      description: "Sorry, we can't find the user associated to this ID.",
+    });
+  }
+
+  // (3) If this method is already enabled
+  const is_trusted_email_enabled = user.account.recovery.methodTwo.is_enabled;
+
+  // If its' already enabled
+  if (is_trusted_email_enabled) {
+    return res.status(400).json({
+      name: "Bad Request",
+      description: "This feature (Trusted email) is already enabled.",
+    });
+  }
+
+  // (4) Check if token is valid and not expired
+  const decodedTrustingEmailToken = await verify_trusted_email_verification_token(token).catch(
+    // Errors in token verification:
+    (error) => {
+      //  (1) if  token is manipulated
+      if (error.toString().includes("invalid signature")) {
+        // (1) Update user document
+        
+        // (3) Inform him
+        res.status(422).json({
+          name: "Invalid Token",
+          description: "Sorry, your token is manipulated!!",
+        });
+      }
+
+      // (2) if token is expired
+      return res.status(401).json({
+        name: "Invalid Token",
+        description:
+          "Sorry, your token is already expired. Please, click the resend button to receive a new email with an active link!",
+      });
+
+      // (3)
+      // TODO: If it's expired => delete the session data (both tokens) => log user out => now,
+      // he needs to login from scratch with his credentials
+    }
+  );
+
+
+  // Last step
+  res.status(200).json({
+    name: "Success",
+    url: req.url,
+    description:
+      "Congrats, you have enabled this account recovery method (Trusted email) successfully.",
+  });
+};
+
+// (4) Disable (DELETE)
+const disableTrustedEmail_DELETE = (req, res, next) => {
+  res.send("hi from disable email delete...");
+};
+
+// (5) Change trusted email (PUT)
+const changeTrustedEmail_PUT = (req, res, next) => {
+  res.send("hi from change trusted email put...");
+};
+
+// During login
+// (6) Page with a button to click to send email (GET)
+const verifyTrustedEmail_during_login_GET = (req, res, next) => {
+  res.send("hi from verify trusted email during login get...");
+};
+
+// (7) Verify and give access (POST)
+const verifyTrustedEmail_during_login_POST = (req, res, next) => {
+  res.send("hi from verify trusted email during login post...");
+};
 
 //======================================================================
 // Export our controllers
@@ -2632,4 +2824,13 @@ module.exports = {
   regenerateBackupCodes_POST,
   verifyBackupCodes_GET,
   verifyBackupCodes_POST,
+
+  generateTrustedEmail_GET,
+  generateTrustedEmail_POST,
+  disableTrustedEmail_DELETE,
+  changeTrustedEmail_PUT,
+  verifyEnableTrustedEmail_GET,
+
+  verifyTrustedEmail_during_login_GET,
+  verifyTrustedEmail_during_login_POST,
 };

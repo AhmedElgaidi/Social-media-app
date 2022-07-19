@@ -8,15 +8,15 @@ module.exports = (error, req, res, next) => {
     });
   }
   // (2) Cast Error
-  if(error.message.includes("Cast")) {
+  if (error.name === "CastError") {
     res.status(422).send({
       name: "Invalid Input",
-      description: `This input (${error.value}) can't be correct!`,
+      description: `The given input can't be correct!!!`,
     });
   }
 
   // (3) Validation Error
-  if (error.message.includes("validation failed")) {
+  if (error.name === "ValidationError") {
     // Let's get only the message from our error object, i had to do it this way, so it
     // would work in the future for any level in the schema (not the 1st or 2nd level, etc...)
     const length = error.message.split(":").length;
@@ -36,7 +36,7 @@ module.exports = (error, req, res, next) => {
   }
 
   // (5) Invalid token Error
-  if(error.name === "JsonWebTokenError" || error.message === "jwt malformed"){
+  if (error.name === "JsonWebTokenError" || error.message === "jwt malformed") {
     res.status(401).send({
       name: "Invalid Token",
       description: `Sorry, your token is invalid!!`,

@@ -20,18 +20,15 @@ const userEmailSchema = new Schema({
         const specialChars = /[`!#$%^&*()_+\-=\[\]{};':"\\|,<>\/?~]/;
         return !specialChars.test(str);
       },
-      message: "Please, don't send malicious data and try to be decent user!15",
+      message: "Please, don't send malicious data and try to be decent user!",
     },
   },
-  verification_token: {
-    type: String,
-  },
+  verification_token: String,
   is_verified: {
     type: Boolean,
     default: false,
   },
   is_verified_at: Date,
-  // array of trusted emails would be here
 });
 
 // ==================================================

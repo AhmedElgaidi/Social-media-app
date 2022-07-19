@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const validator = require("validator");
 
 // ================================================
 const Schema = mongoose.Schema;
@@ -25,14 +26,47 @@ const userRecoveryOptionsSchema = new Schema({
     },
     changed_at: Date,
   },
-  methodTwo: {},
+  methodTwo: {
+    // Trusted email
+    email: {
+      temp_value: {
+        type: String,
+        unique: [true, "Please, provide us with a valid email!"],
+        lowercase: true,
+        trim: true,
+        index: true,
+        validate: [validator.isEmail, "Please, provide us with a valid email!"],
+        validate: {
+          // to remove any special char as well as white spaces and tabs
+          validator: function (str) {
+            const specialChars = /[`!#$%^&*()_+\-=\[\]{};':"\\|,<>\/?~]/;
+            return !specialChars.test(str);
+          },
+          message:
+            "Please, don't send malicious data and try to be decent user!",
+        },
+      },
+      value: String,
+      verification_token: String,
+      is_verified: {
+        type: Boolean,
+        default: false,
+      },
+      is_verified_at: Date,
+    },
+    is_enabled: {
+      type: Boolean,
+      default: false,
+    },
+    changed_at: Date,
+  },
 });
 
 // ==================================================
 
 userRecoveryOptionsSchema.pre("save", async function (next) {
-  if (!this.isModified("methodOne.is_enabled")) return next();
-  this.methodOne.changed_at = Date.now();
+  if (!this.isModified("methodTwo.is_enabled")) return next();
+  this.methodTwo.changed_at = Date.now();
   next();
 });
 
