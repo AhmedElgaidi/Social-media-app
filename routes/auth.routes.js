@@ -208,7 +208,6 @@ router
   .route("/account-recovery/trusted-email")
   .get(protect, is_account_active, authControllers.generateTrustedEmail_GET)
   .post(protect, is_account_active, authControllers.generateTrustedEmail_POST)
-  .put(protect, is_account_active, authControllers.changeTrustedEmail_PUT)
   .delete(
     protect,
     is_account_active,
@@ -216,16 +215,18 @@ router
   );
 
 router
-  .route("/account-recovery/trusted-email/verify/:userId/:token")
-  .get(
-    authControllers.verifyEnableTrustedEmail_GET
-  );
+  .route("/account-recovery/trusted-email/verify/:token")
+  .get(authControllers.verifyEnableTrustedEmail_GET);
 
-// During login
+// During Recovery
 router
-  .route("/account-recovery/trusted-email/verify-during-login")
-  .get(authControllers.verifyTrustedEmail_during_login_GET)
-  .post(authControllers.verifyTrustedEmail_during_login_POST);
+  .route("/account-recovery/trusted-email/send")
+  .get(authControllers.sendEmailToTrustedEmail_during_recovery_GET)
+  .post(authControllers.sendEmailToTrustedEmail_during_recovery_POST);
+
+router
+  .route("/account-recovery/trusted-email/verify-during-recovery/:token")
+  .get(authControllers.verifyTrustedEmail_during_recovery_GET);
 
 //=======================================
 

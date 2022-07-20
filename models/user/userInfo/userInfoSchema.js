@@ -63,7 +63,7 @@ const userInfoSchema = new Schema({
         const specialChars = /[`!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~]/;
         return !specialChars.test(str);
       },
-      message: "Please, don't send malicious data and try to be decent user!3",
+      message: "Please, don't send malicious data and try to be decent user!",
     },
   },
   age: {

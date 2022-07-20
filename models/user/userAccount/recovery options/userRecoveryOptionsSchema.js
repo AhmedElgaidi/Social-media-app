@@ -47,11 +47,9 @@ const userRecoveryOptionsSchema = new Schema({
         },
       },
       value: String,
+      changed_at: Date,
       verification_token: String,
-      is_verified: {
-        type: Boolean,
-        default: false,
-      },
+      is_verified: Boolean,
       is_verified_at: Date,
     },
     is_enabled: {
@@ -59,13 +57,15 @@ const userRecoveryOptionsSchema = new Schema({
       default: false,
     },
     changed_at: Date,
+    recovery_token: String,
+    last_recovered_at: Date,
   },
 });
 
 // ==================================================
 
 userRecoveryOptionsSchema.pre("save", async function (next) {
-  if (!this.isModified("methodTwo.is_enabled")) return next();
+  if (!this.isModified("methodTwo.is_enabled") || this.isNew) return next();
   this.methodTwo.changed_at = Date.now();
   next();
 });
