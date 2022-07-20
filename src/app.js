@@ -7,8 +7,8 @@ const express = require("express");
 const mongoSanitize = require("express-mongo-sanitize");
 
 // (3) custom modules
-const authRoutes = require("./routes/auth.routes");
-const userRoutes = require("./routes/user.routes");
+const authRoutes = require("./routes/auth/auth.routes");
+const userRoutes = require("./src/routes/user.routes");
 const { logError, returnError } = require("./errors/errorHandler");
 const otherErrorScenarios = require("./errors/otherErrorScenarios");
 
@@ -18,6 +18,7 @@ const otherErrorScenarios = require("./errors/otherErrorScenarios");
 const app = express();
 //======================================================================
 
+// ===============================
 // My Middlewares
 
 // for parsing application/json
@@ -48,15 +49,11 @@ app.all("*", (req, res, next) => {
   next();
 });
 
-// Our error handling and logging middlewares| It has to be after all middlewares
-app.use(logError);
-app.use(otherErrorScenarios);
-app.use(returnError);
-
+// Our combined error handling and logging middleware
+// [Note]: It has to be after all middlewares
+app.use([logError, otherErrorScenarios, returnError]);
 //======================================================================
 
 module.exports = app;
 
 // TODO: Rate limit
-// TODO: Don't let fake ips to access api
-// TODO: Cast error: user ID length has to be 24 chars, if not then error message.

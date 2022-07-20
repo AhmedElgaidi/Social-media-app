@@ -1,2 +1,5 @@
-# should i store the 2fa code in hashed format in our db?
-No, we don't. it's called 2fa (two factors to get in!!!), so if the attacker accesed the database, he can generate a TOTP based on this 2fa code, but still can't know the user password as it's hased, right!!! 
+sanitizing vs escaping vs validation
+
+validation => to ensure the data follows certain rules (length, type, etc...)
+escaping => process of securing outputs, so there is no injection happens in the HTML, etc... 
+sanitizing => process of clearing/ filtering/ removing input data

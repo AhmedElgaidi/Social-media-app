@@ -1,10 +1,10 @@
 const express = require("express");
 
 // Import our controllers
-const authControllers = require("../controllers/auth.controllers");
-const protect = require("../middlewares/protect");
-const getDeviceInfo = require("../middlewares/getDeviceInfo");
-const is_account_active = require("../middlewares/isAccountActive");
+const authControllers = require("../../controllers/auth.controllers");
+const protect = require("../../middlewares/protect");
+const getDeviceInfo = require("../../middlewares/getDeviceInfo");
+const is_account_active = require("../../middlewares/isAccountActive");
 //======================================
 
 // Let's create our express router instance
