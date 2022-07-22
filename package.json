@@ -2,9 +2,9 @@
   "name": "social-app",
   "version": "1.0.0",
   "description": "An API using Node.js/ Express.js and mongoDB/ mongoose",
-  "main": "server.js",
+  "main": "./src/server.js",
   "scripts": {
-    "start:dev": "NODE_ENV=development nodemon server.js",
+    "start:dev": "NODE_ENV=development NODE_PATH=src/ nodemon server.js",
     "start:prod": "NODE_ENV=production nodemon server.js"
   },
   "repository": {

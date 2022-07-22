@@ -1,14 +1,21 @@
+// This for relative path
+global.__require = function (file) {
+  return require(__dirname + '/' + file)
+}
 // [NOTE]: This file would be for anything not related to express app
 
 // Our modules
-require("dotenv").config({ path: "./config.env" }); // to import our variables
+require("dotenv").config({ path: "config.env" }); // to import our variables
 const app = require("./app");
 const mongoose = require("mongoose");
-const { logError, isOperationalError } = require("./errors/errorHandler");
+const {
+  logError,
+  isOperationalError,
+} = require(`./api/v1/errors/errorHandler`);
 
 //================================================================================================
 
-const server = app.listen(process.env.PORT || 8000, () => {
+app.listen(process.env.PORT || 8000, () => {
   mongoose
     .connect(process.env.MONGODB_URI, {
       useNewUrlParser: true,
