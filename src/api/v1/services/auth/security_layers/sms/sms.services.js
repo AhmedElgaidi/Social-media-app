@@ -1,5 +1,11 @@
 const User = require("./../../../../models/user/User");
 
+const twilio = require("twilio");
+
+const is_phone_code_match = require("./../../../../helpers/is_phone_code_match");
+
+const bcrypt = require("bcrypt");
+
 //==================================================================================
 
 // method (3): Text message (send code as sms)

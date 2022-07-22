@@ -36,7 +36,7 @@ router
   .post(protect, is_account_active, verifySMS_duringSetup_POST_controller);
 
 router
-  .route("sms/setup/resend")
+  .route("/sms/setup/resend")
   .post(protect, is_account_active, resendSMS_during_setup_POST_controller);
 
 //------------------------------------------------------------
