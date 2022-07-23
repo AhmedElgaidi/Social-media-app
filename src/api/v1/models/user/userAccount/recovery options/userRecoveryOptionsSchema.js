@@ -31,10 +31,8 @@ const userRecoveryOptionsSchema = new Schema({
     email: {
       temp_value: {
         type: String,
-        unique: [true, "Please, provide us with a valid email!"],
         lowercase: true,
         trim: true,
-        index: true,
         validate: [validator.isEmail, "Please, provide us with a valid email!"],
         validate: {
           // to remove any special char as well as white spaces and tabs
@@ -43,8 +41,9 @@ const userRecoveryOptionsSchema = new Schema({
             return !specialChars.test(str);
           },
           message:
-            "Please, don't send malicious data and try to be decent user!",
+            "Please, don't send malicious data and try to be a decent user!",
         },
+        default: "",
       },
       value: String,
       changed_at: Date,

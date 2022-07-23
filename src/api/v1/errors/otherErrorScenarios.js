@@ -5,6 +5,7 @@ module.exports = (error, req, res, next) => {
     res.status(500).send({
       name: "Duplicated data",
       description: `Please, choose another unique value (${value})!`,
+      error
     });
   }
   // (2) Cast Error

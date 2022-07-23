@@ -1,5 +1,12 @@
 const User = require("./../../../../models/user/User");
 
+const {
+  create_trusted_email_verification_token,
+  verify_trusted_email_verification_token,
+} = require("./../../../../helpers/tokens/trustedEmail");
+
+const sendEmail = require("./../../../../helpers/createSendEmail");
+
 //===========================================================================
 // (2) Send an email to a previously trusted assigned email
 
