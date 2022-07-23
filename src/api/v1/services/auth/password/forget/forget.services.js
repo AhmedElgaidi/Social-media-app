@@ -1,7 +1,14 @@
 const User = require("./../../../../models/user/User");
+
 const {
   create_password_reset_token_token,
 } = require("./../../../../helpers/tokens/resetToken");
+
+const sendEmail = require("./../../../../helpers/createSendEmail");
+
+const {
+  forgetPassword_GET_validation,
+} = require("./../../../../validations/auth/password/forget/forget.validations");
 
 //=================================================================
 
@@ -11,15 +18,7 @@ const forgetPassword_GET_service = ({ req, res, next }) => {
 
 const forgetPassword_POST_service = async ({ req, res, next }) => {
   // (1) Get user email from request body
-  const { email } = req.body;
-
-  // If not found
-  if (!email) {
-    return res.status(404).json({
-      status: "Invalid Input",
-      description: "Please, send your email!!",
-    });
-  }
+  const { email } = forgetPassword_GET_validation({ req, res, next });
 
   // (2) Check it in the DB
   const user = await User.findOne({
@@ -49,11 +48,12 @@ const forgetPassword_POST_service = async ({ req, res, next }) => {
   const message = `Click to Reset your account, ${passwordResetUrl}, you only have ${process.env.PASSWORD_RESET_TOKEN_SECRET_EXPIRES_IN}. If you didn't asked for reset, then ignore this email.`;
 
   // (7) Send the activation link to user
-  await sendEmail({
-    email,
-    subject: "Password Reset Link",
-    message,
-  });
+  // await sendEmail({
+  //   email,
+  //   subject: "Password Reset Link",
+  //   message,
+  // });
+  TODO: console.log(passwordResetUrl);
 
   // (8) Inform the front-end with the status
   return res.status(200).json({

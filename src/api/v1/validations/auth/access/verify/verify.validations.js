@@ -1,11 +1,16 @@
-const {
-  verify_POST_service,
-} = require("../../../../services/auth/access/verify/verify.services");
+const verify_POST_validation = ({ req, res, next }) => {
+  // (1) Get token from request
+  const token = req.params.token;
 
-const verify_POST_controller = async (req, res, next) => {
-  await verify_POST_service({ req, res, next });
-};
+  // If not found
+  if (!token) {
+    return res.status(404).json({
+      name: "Not Found",
+      description:
+        "Sorry, we can't find the verification token in the request parameters.",
+    });
+  }
 
-module.exports = {
-  verify_POST_controller,
+  // (2) Pass token the service function
+  return token;
 };

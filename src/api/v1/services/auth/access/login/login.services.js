@@ -10,6 +10,10 @@ const sendEmail = require("./../../../../helpers/createSendEmail");
 
 const giveAccess = require("./../../../../helpers/giveAccess");
 
+const {
+  login_POST_validation,
+} = require("./../../../../validations/auth/access/login/login.validations");
+
 //============================================================
 
 const login_GET_service = ({ req, res, next }) => {
@@ -20,16 +24,8 @@ const login_GET_service = ({ req, res, next }) => {
 
 const login_POST_service = async ({ req, res, next }) => {
   // (1) Get user data from request
-  const { email, password } = req.body;
-
-  // If they aren't found
-  if (!(email && password)) {
-    res.status(422).json({
-      name: "Invalid Credentials",
-      description: "Please, provide us with all of your credentials!!",
-    });
-  }
-
+  const { email, password } = login_POST_validation({ req, res, next });
+  console.log(email);
   // (2) check for user email in our DB
   const user = await User.findOne({
     "account.email.value": email,

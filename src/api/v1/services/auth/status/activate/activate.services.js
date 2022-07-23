@@ -4,11 +4,15 @@ const {
   verify_account_activation_token,
 } = require("./../../../../helpers/tokens/accountActivation");
 
+const {
+  activateAccount_POST_validation,
+} = require("./../../../../validations/auth/status/activate/activate.validations");
+
 //=========================================================================
 
 const activateAccount_POST_service = async ({ req, res, next }) => {
   // (1) Get account activation token from request
-  const token = req.params.token;
+  const token = activateAccount_POST_validation({ req, res, next });
 
   // (2) Validate token and check it's expiration date
   await verify_account_activation_token(token).catch((error) => {

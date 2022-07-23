@@ -4,12 +4,10 @@ const User = require("./../../../../models/user/User");
 
 // Get all account session
 const sessions_GET_service = async ({ req, res, next }) => {
-  const userId = req.userId;
-  const access_token = req.headers["x-access-token"] || req.body.access_token;
+  const { access_token, userId } = req;
 
   const user = await User.findById(userId).select({
     "account.session": 1,
-    _id: 0,
   });
 
   const accountCurrentSession = user.account.session.find(

@@ -2,6 +2,16 @@ const User = require("./../../.././../models/user/User");
 
 const speakeasy = require("speakeasy");
 
+const {
+  scanTOTP_qrCode_GET_validation,
+  verifyTOTP_during_setup_POST_validation,
+  verifyTOTP_during_login_POST_validation
+} = require("./../../../../validations/auth/security_layers/totp/totp.validations");
+
+const {
+  verifySMS_duringLogin_GET_controller,
+} = require("../../../../controllers/auth/security_layers/sms/sms.controllers");
+
 //========================================================================
 const all2faMethods_GET_service = async ({ req, res, next }) => {
   // (1) Get user from DB
@@ -63,7 +73,7 @@ const generateSecretTOTP_POST_service = async ({ req, res, next }) => {
 // (2) Scan Secret
 const scanTOTP_qrCode_GET_service = async ({ req, res, next }) => {
   // (1) Get qrcode from request
-  const qrcode = req.params.qrcode;
+  const { qrcode } = scanTOTP_qrCode_GET_validation({ req, res, next });
 
   // (2) Send qrcode to frontend to generate for user a qrcode to be scanned
   res.status(200).json({
@@ -85,16 +95,7 @@ const VerifyTOTP_during_setup_GET_service = async ({ req, res, next }) => {
 
 const verifyTOTP_during_setup_POST_service = async ({ req, res, next }) => {
   // (1) Get TOTP token
-  const { token } = req.body;
-
-  // If not found
-  if (!token) {
-    res.status(404).json({
-      name: "Not Found",
-      description:
-        "Please, send your token generated from your authenticator app!!",
-    });
-  }
+  const { token } = verifyTOTP_during_setup_POST_validation({ req, res, next });
 
   // (2) Get user document from DB
   const user = await User.findById(req.userId).select({
@@ -204,7 +205,11 @@ const verifyTOTP_during_login_GET_service = async ({ req, res, next }) => {
 
 const verifyTOTP_during_login_POST_service = async ({ req, res, next }) => {
   // (1) Get TOTP token
-  const { userId, token } = req.body;
+  const { userId, token } = verifyTOTP_during_login_POST_validation({
+    req,
+    res,
+    next,
+  });
 
   // If token is not found
   if (!token) {

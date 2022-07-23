@@ -5,8 +5,7 @@ const User = require("./../../../../models/user/User");
 // Delete a user session
 const revokeSession_DELETE_service = async ({ req, res, next }) => {
   // (1) Get access token and userId from protect middleware
-  const access_token = req.access_token,
-    userId = req.userId;
+  const { access_token, userId } = req;
 
   // (2) Get user document
   const user = await User.findById(userId).select({

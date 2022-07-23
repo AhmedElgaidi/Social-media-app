@@ -1,11 +1,17 @@
 const User = require("./../../../../models/user/User");
+
 const correct_password = require("./../../../../helpers/password");
+
+const {
+  changePassword_POST_validation,
+} = require("./../../../../validations/auth/password/change/change.validations");
 
 //===================================================================
 
 const changePassword_POST_service = async ({ req, res, next }) => {
   // (1) Get userId and user data from request
-  const { old_password, password, confirm_password } = req.body;
+  const { old_password, password, confirm_password } = 
+    changePassword_POST_validation({ req, res, next });
   const userId = req.userId;
 
   // (2) Get user document

@@ -4,6 +4,10 @@ const {
   verify_password_reset_token_token,
 } = require("./../../../../helpers/tokens/resetToken");
 
+const {
+  resetPassword_POST_validation,
+} = require("./../../../../validations/auth/password/reset/reset.validations");
+
 //========================================================================
 
 const resetPassword_GET_service = ({ req, res, next }) => {
@@ -15,34 +19,12 @@ const resetPassword_GET_service = ({ req, res, next }) => {
 
 const resetPassword_POST_service = async ({ req, res, next }) => {
   // (1) Get new passwords and password reset token from request
-  const { token: passwordResetToken, userId } = req.params,
-    { password, confirm_password } = req.body;
-
-  // (2) Check for their existence in the request
-
-  // If token is not found
-  if (!passwordResetToken) {
-    return res.status(404).json({
-      status: "Not Found",
-      description: "Please, send your token!!",
-    });
-  }
-
-  // If user id is not found
-  if (!userId) {
-    return res.status(404).json({
-      status: "Not Found",
-      description: "Please, send your ID!!!",
-    });
-  }
-
-  // If password and confirm_password are not found
-  if (!(password && confirm_password)) {
-    return res.status(404).json({
-      status: "Not Found",
-      description: "Please, send your new password!!",
-    });
-  }
+  const {
+    token: passwordResetToken,
+    userId,
+    password,
+    confirm_password,
+  } = resetPassword_POST_validation({ req, res, next });
 
   // (2) Verify password reset token
   await verify_password_reset_token_token(passwordResetToken).catch((error) => {

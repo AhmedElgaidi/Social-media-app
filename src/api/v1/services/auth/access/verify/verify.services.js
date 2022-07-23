@@ -3,11 +3,14 @@ const {
   verify_email_verification_token,
 } = require("./../../../../helpers/tokens/emailVerificationToken");
 
+const {
+  verify_POST_validation,
+} = require("./../../../../validations/auth/access/verify/verify.validations");
+
 //============================================================
 const verify_POST_service = async ({ req, res, next }) => {
-    console.log("hi: ", req)
   // (1) Get email verification token
-  const verificationToken = req.params.token;
+  const verificationToken = verify_POST_validation({ req, res, next });
 
   // (2) Search about it in DB
   const user = await User.findOne({

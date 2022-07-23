@@ -1,45 +1,58 @@
-const {
-  generateSendOTP_GET_service,
-  generateSendOTP_POST_service,
-  disableOTP_DELETE_service,
-  verifyOTP_GET_service,
-  verifyOTP_POST_service,
-  re_generate_send_OTP_POST_service,
-} = require("../../../../services/auth/security_layers/otp/otp.services");
+const verifyOTP_POST_validation = ({ req, res, next }) => {
+  // (1) Get user data from request
+  const { userId, otp } = req.body;
 
-//================================================================================
+  // (2) Check for their existence
+  // If ID is not found
+  if (!userId) {
+    return res.status(404).json({
+      name: "Not Found",
+      description: "We can't find the user ID.",
+    });
+  }
 
-const generateSendOTP_GET_controller = (req, res, next) => {
-  generateSendOTP_GET_service({ req, res, next });
+  // IF otp is not found
+  if (!otp) {
+    return res.status(404).json({
+      name: "Not Found",
+      description: "We can't find the otp.",
+    });
+  }
+
+  // If otp length isn't correct, we don't have to check it in our db, right!
+  if (otp.toString().length != 6) {
+    res.status(422).json({
+      name: "Invalid Input",
+      description: "This otp length can't be correct!",
+    });
+  }
+
+  // (3) Pass them to the service function
+  return {
+    userId,
+    otp,
+  };
 };
 
-const generateSendOTP_POST_controller = async (req, res, next) => {
-  await generateSendOTP_POST_service({ req, res, next });
-};
+const re_generate_send_OTP_POST_validation = ({ req, res, next }) => {
+  // (1) Get user ID from request
+  const { userId } = req.body;
 
-const disableOTP_DELETE_controller = async (req, res, next) => {
-  await disableOTP_DELETE_service({ req, res, next });
-};
+  // (2) If not found in request
+  if (!userId) {
+    return res.status(404).json({
+      name: "Not Found",
+      description: "You have to send your ID.",
+    });
+  }
 
-const verifyOTP_GET_controller = (req, res, next) => {
-  verifyOTP_GET_service({ req, res, next });
+  // (3) Pass ID to service function
+  return {
+    userId,
+  };
 };
-
-const verifyOTP_POST_controller = async (req, res, next) => {
-  await verifyOTP_POST_service({ req, res, next });
-};
-
-const re_generate_send_OTP_POST_controller = async (req, res, next) => {
-  await re_generate_send_OTP_POST_service({ req, res, next });
-};
-
-//================================================================================
 
 module.exports = {
-  generateSendOTP_GET_controller,
-  generateSendOTP_POST_controller,
-  disableOTP_DELETE_controller,
-  verifyOTP_GET_controller,
-  verifyOTP_POST_controller,
-  re_generate_send_OTP_POST_controller,
+  verifyOTP_POST_validation,
+  re_generate_send_OTP_POST_validation
 };

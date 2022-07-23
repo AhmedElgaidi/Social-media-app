@@ -9,22 +9,16 @@ const {
   create_access_token,
 } = require("./../../../../helpers/tokens/accessToken");
 
+const {
+  refreshToken_POST_validation,
+} = require("./../../../../validations/auth/session/refresh/refresh.validations");
+
 //=================================================================
 
 const refreshToken_POST_service = async ({ req, res, next }) => {
   // (1) Get refresh token
-  const refresh_token =
-    req.headers["x-refresh-token"] ||
-    req.body.refresh_token ||
-    req.query.refresh_token;
+  const refresh_token = refreshToken_POST_validation({ req, res, next });
 
-  // (2) Check for its existence in the received request
-  if (!refresh_token) {
-    return res.status(404).json({
-      name: "Invalid Input",
-      description: "Your refresh token is not found!!",
-    });
-  }
   // (3) verify refresh token
   const decodedRefreshToken = await verify_refresh_token(refresh_token).catch(
     // Errors in refresh token verification:

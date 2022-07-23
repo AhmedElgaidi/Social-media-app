@@ -4,6 +4,11 @@ const sendEmail = require("./../../../../helpers/createSendEmail");
 
 const is_otp_match = require("./../../../../helpers/is_otp_match");
 
+const {
+  verifyOTP_POST_validation,
+  re_generate_send_OTP_POST_validation,
+} = require("./../../../../validations/auth/security_layers/otp/otp.validations");
+
 //=======================================================================
 
 // method (2): Email him OTP code  (One-Time Password)
@@ -78,31 +83,7 @@ const verifyOTP_GET_service = ({ req, res, next }) => {
 
 const verifyOTP_POST_service = async ({ req, res, next }) => {
   // (1) Get userId and otp from request
-  const { userId, otp } = req.body;
-
-  // If ID is not found
-  if (!userId) {
-    return res.status(404).json({
-      name: "Not Found",
-      description: "We can't find the user ID.",
-    });
-  }
-
-  // IF otp is not found
-  if (!otp) {
-    return res.status(404).json({
-      name: "Not Found",
-      description: "We can't find the otp.",
-    });
-  }
-
-  // If otp length isn't correct, we don't have to check it in our db, right!
-  if (otp.toString().length != 6) {
-    res.status(422).json({
-      name: "Invalid Input",
-      description: "This otp length can't be correct!",
-    });
-  }
+  const { userId, otp } = verifyOTP_POST_validation({ req, res, next });
 
   // (2) Check user by it's ID in our DB
   const user = await User.findById(userId).select({
@@ -235,15 +216,7 @@ const disableOTP_DELETE_service = async ({ req, res, next }) => {
 // (4) Resend OTP
 const re_generate_send_OTP_POST_service = async ({ req, res, next }) => {
   // (1) Get userId from request
-  const { userId } = req.body;
-
-  // If not found in request
-  if (!userId) {
-    return res.status(404).json({
-      name: "Not Found",
-      description: "You have to send your ID.",
-    });
-  }
+  const { userId } = re_generate_send_OTP_POST_validation({ req, res, nextI });
 
   // (2) Check user in our DB
   const user = await User.findById(userId).select({

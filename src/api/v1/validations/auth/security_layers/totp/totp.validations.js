@@ -1,56 +1,71 @@
-const {
-  all2faMethods_GET_service,
-  generateSecretTOTP_POST_service,
-  disableTOTP_DELETE_service,
-  scanTOTP_qrCode_GET_service,
-  VerifyTOTP_during_setup_GET_service,
-  verifyTOTP_during_setup_POST_service,
-  verifyTOTP_during_login_GET_service,
-  verifyTOTP_during_login_POST_service,
-} = require("../../../../services/auth/security_layers/totp/totp.services");
+const scanTOTP_qrCode_GET_validation = ({ req, res, next }) => {
+  // (1) Get qrcode from request parameters
+  const qrcode = req.params.qrcode;
 
-// ===================================================================
+  // (2) If not found
+  if (!qrcode) {
+    return res.status(404).json({
+      name: "Not Found",
+      description: "Sorry, we can't find the QR code in th request parameters.",
+    });
+  }
 
-const all2faMethods_GET_controller = async (req, res, next) => {
-  await all2faMethods_GET_service({ req, res, next });
+  // (3) Pass qrcode to the service function
+  return {
+    qrcode,
+  };
 };
 
-const generateSecretTOTP_POST_controller = async (req, res, next) => {
-  await generateSecretTOTP_POST_service({ req, res, next });
+const verifyTOTP_during_setup_POST_validation = ({ req, res, next }) => {
+  // (1) Get token from request
+  const { token } = req.body;
+
+  // (2) If not found
+  if (!token) {
+    res.status(404).json({
+      name: "Not Found",
+      description:
+        "Please, send your token generated from your authenticator app!!",
+    });
+  }
+
+  // (3) Pass token to the service function
+  return {
+    token,
+  };
 };
 
-const disableTOTP_DELETE_controller = async (req, res, next) => {
-  await disableTOTP_DELETE_service({ req, res, next });
+const verifyTOTP_during_login_POST_validation = ({ req, res, next }) => {
+  // (1) Get user data from request
+  const { userId, token } = req.body;
+
+  // (2) Check for their existence
+  // If userId is not found
+  if (!userId) {
+    res.status(404).json({
+      name: "Not Found",
+      description: "Sorry, we can't find the ID in the request.",
+    });
+  }
+
+  // If token is not found
+  if (!token) {
+    res.status(404).json({
+      name: "Not Found",
+      description:
+        "Please, send your token generated from your authenticator app!!",
+    });
+  }
+
+  // (3) Pass user data to the service function
+  return {
+    userId,
+    token,
+  };
 };
 
-const scanTOTP_qrCode_GET_controller = async (req, res, next) => {
-  await scanTOTP_qrCode_GET_service({ req, res, next });
-};
-
-const totpVerify_GET_controller = async (req, res, next) => {
-  await VerifyTOTP_during_setup_GET_service({ req, res, next });
-};
-
-const verifyTOTP_during_setup_POST_controller = async (req, res, next) => {
-  await verifyTOTP_during_setup_POST_service({ req, res, next });
-};
-
-const verifyTOTP_during_login_GET_controller = async (req, res, next) => {
-  await verifyTOTP_during_login_GET_service({ req, res, next });
-};
-
-const verifyTOTP_during_login_POST_controller = async (req, res, next) => {
-  await verifyTOTP_during_login_POST_service({ req, res, next });
-};
-
-//=====================================================================
 module.exports = {
-  all2faMethods_GET_controller,
-  generateSecretTOTP_POST_controller,
-  disableTOTP_DELETE_controller,
-  scanTOTP_qrCode_GET_controller,
-  totpVerify_GET_controller,
-  verifyTOTP_during_setup_POST_controller,
-  verifyTOTP_during_login_GET_controller,
-  verifyTOTP_during_login_POST_controller,
+  scanTOTP_qrCode_GET_validation,
+  verifyTOTP_during_setup_POST_validation,
+  verifyTOTP_during_login_POST_validation,
 };

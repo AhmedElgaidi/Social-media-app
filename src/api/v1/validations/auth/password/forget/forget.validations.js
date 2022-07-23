@@ -1,19 +1,21 @@
-const {
-  forgetPassword_GET_service,
-  forgetPassword_POST_service,
-} = require("../../../../services/auth/password/forget/forget.services");
+const forgetPassword_GET_validation = ({ req, res, next }) => {
+  // (1) Get user data from request
+  const { email } = req.body;
 
-//======================================================================
+  // (2) If email is not found
+  if (!email) {
+    return res.status(404).json({
+      name: "Not Found",
+      description: "Sorry, we can't find the email field in the request.",
+    });
+  }
 
-const forgetPassword_GET_controller = (req, res, next) => {
-  forgetPassword_GET_service({ req, res, next });
-};
-
-const forgetPassword_POST_controller = async (req, res, next) => {
-  await forgetPassword_POST_service({ req, res, next });
+  // (3) Pass user data to the service function
+  return {
+    email,
+  };
 };
 
 module.exports = {
-  forgetPassword_GET_controller,
-  forgetPassword_POST_controller,
+  forgetPassword_GET_validation,
 };

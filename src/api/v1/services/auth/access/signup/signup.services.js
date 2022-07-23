@@ -1,7 +1,10 @@
 const User = require("./../../../../models/user/User");
+
 const {
   create_email_verification_token,
 } = require("./../../../../helpers/tokens/emailVerificationToken");
+
+const sendEmail = require("./../../../../helpers/createSendEmail");
 
 const {
   signup_POST_validation,
@@ -27,7 +30,7 @@ const signup_POST_service = async ({ req, res, next }) => {
     email,
     password,
     confirm_password,
-  } = req.body;
+  } = signup_POST_validation({ req, res, next });
 
   // (2) Create user document
   const user = new User({
@@ -64,9 +67,10 @@ const signup_POST_service = async ({ req, res, next }) => {
   const verificationUrl = `${req.protocol}://${process.env.HOST}:${process.env.PORT}/api/v1/auth/verify-email/${verificationToken}`;
   const message = `Click to verify your email, ${verificationUrl}, you only have ${process.env.EMAIL_VERIFICATION_TOKEN_SECRET_EXPIRES_IN}`;
   // TODO: await sendEmail({ email, subject: "Email verification link", message });
+  console.log(verificationUrl);
 
   // (6) Inform the front-end about the status
-  await res.status(201).json({
+  res.status(201).json({
     status: "Success",
     message:
       "User created successfully, check your mail box to verify your account",
