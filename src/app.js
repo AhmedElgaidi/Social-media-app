@@ -36,6 +36,10 @@ const otp_routes = require("./api/v1/routes/auth/security_layers/otp/otp.routes"
 const sms_routes = require("./api/v1/routes/auth/security_layers/sms/sms.routes");
 const question_routes = require("./api/v1/routes/auth/security_layers/question/question.routes");
 
+// (6) Recovery options
+const backupCodes_routes = require("./api/v1/routes/auth/recovery/backup_codes/backup_codes.routes");
+const trustedEmail_routes = require("./api/v1/routes/auth/recovery/trusted_email/trusted_email.routes");
+
 const { logError, returnError } = require("./api/v1/errors/errorHandler");
 const otherErrorScenarios = require("./api/v1/errors/otherErrorScenarios");
 
@@ -63,7 +67,6 @@ app.use(
 
 //======================================================================
 // My routes
-// app.use("/api/v1/auth", auth_routes);
 const auth_routes_middleware = () => {
   app.use(
     "/api/v1/auth",
@@ -82,12 +85,17 @@ const auth_routes_middleware = () => {
     totp_routes, // Layer (1)
     otp_routes, // Layer (2)
     sms_routes, // Layer (3)
-    // Layer (4)
+    question_routes, // Layer (4)
+  ]);
+
+  // Recovery options
+  app.use("/api/v1/auth/account-recovery", [
+    backupCodes_routes,
+    trustedEmail_routes
   ]);
 };
 
 auth_routes_middleware();
-// app.use("/api/v1", userRoutes);
 
 // 404 handler
 app.all("*", (req, res, next) => {

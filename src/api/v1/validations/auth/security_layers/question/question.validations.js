@@ -9,7 +9,7 @@ const {
     disable_question_DELETE_service,
     verify_question_during_login_GET_service,
     verify_question_during_login_POST_service,
-} = require("./../../../../services/auth/security_layers/question/question.services");
+} = require("../../../../services/auth/security_layers/question/question.services");
 
 // =======================================================================
 // During setup:

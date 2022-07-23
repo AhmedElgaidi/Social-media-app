@@ -3,6 +3,10 @@ const {
   create_email_verification_token,
 } = require("./../../../../helpers/tokens/emailVerificationToken");
 
+const {
+  signup_POST_validation,
+} = require("./../../../../validations/auth/access/signup/signup.validations");
+
 //============================================================
 // Service (1)
 const signup_GET_service = ({ req, res, next }) => {
