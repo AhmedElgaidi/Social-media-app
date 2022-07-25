@@ -6,6 +6,13 @@ const {
   is_given_backup_code_found,
 } = require("./../../../../helpers/backupCodes");
 
+const {
+  confirmBackupCodes_GET_validation,
+  confirmBackupCodes_POST_validation,
+  regenerateBackupCodes_POST_validation,
+  verifyBackupCodes_POST_validation
+} = require("./../../../../validations/auth/recovery/backup_codes/backup_codes.validations");
+
 //====================================================================
 // Recovery options
 
@@ -159,15 +166,7 @@ const disableBackupCodes_DELETE_service = async ({ req, res, next }) => {
 // (4) Confirm backup codes (GET)
 const confirmBackupCodes_GET_service = async ({ req, res, next }) => {
   // (1) Get userId from previous middleware
-  const { userId } = req.query;
-
-  // If userId not found
-  if (!userId) {
-    return res.status(404).json({
-      name: "ID Not Found",
-      description: "Sorry, we can't find the ID in the request parameters",
-    });
-  }
+  const { userId } = confirmBackupCodes_GET_validation({ req, res, next });
 
   // (2) Get user from DB
   const user = await User.findById(userId).select({
@@ -205,15 +204,7 @@ const confirmBackupCodes_GET_service = async ({ req, res, next }) => {
 // (5) Confirm and save backup codes (POST)
 const confirmBackupCodes_POST_service = async ({ req, res, next }) => {
   // (1) Get userId from previous middleware
-  const { userId } = req.body || req.query;
-
-  // If userId not found
-  if (!userId) {
-    return res.status(404).json({
-      name: "ID Not Found",
-      description: "Sorry, we can't find the ID in the request. bla bla bla",
-    });
-  }
+  const { userId } = confirmBackupCodes_POST_validation({ req, res, next });
 
   // (2) Get user from DB
   const user = await User.findById(userId).select({
@@ -287,15 +278,7 @@ const regenerateBackupCodes_GET_service = ({ req, res, next }) => {
 // (7) Regenerate backup codes (POST)
 const regenerateBackupCodes_POST_service = async ({ req, res, next }) => {
   // (1) Get userId from request
-  const { userId } = req.body || req.query;
-
-  // If userId not found
-  if (!userId) {
-    return res.status(404).json({
-      name: "ID Not Found",
-      description: "Sorry, we can't find the ID in the request.ds",
-    });
-  }
+  const { userId } = regenerateBackupCodes_POST_validation({ req, res, next });
 
   // (2) Get user from DB
   const user = await User.findById(userId).select({
@@ -359,31 +342,11 @@ const verifyBackupCodes_GET_service = ({ req, res, next }) => {
 // (9) Verify backup codes (POST)
 const verifyBackupCodes_POST_service = async ({ req, res, next }) => {
   // (1) Get userId and code from request
-  const { userId, code } = req.body;
-
-  // If userId not found
-  if (!userId) {
-    return res.status(404).json({
-      name: "ID Not Found",
-      description: "Sorry, we can't find the ID in the request.",
-    });
-  }
-
-  // If code not found
-  if (!code) {
-    return res.status(404).json({
-      name: "Code Not Found",
-      description: "Sorry, we can't find the backup code in the request.",
-    });
-  }
-
-  // IF code length isn't correct
-  if (code.length != 12) {
-    return res.status(422).json({
-      name: "Invalid Input",
-      description: "Sorry, the code length can't be true!",
-    });
-  }
+  const { userId, code } = verifyBackupCodes_POST_validation({
+    req,
+    res,
+    next,
+  });
 
   // (2) Get user from DB
   const user = await User.findById(userId).select({

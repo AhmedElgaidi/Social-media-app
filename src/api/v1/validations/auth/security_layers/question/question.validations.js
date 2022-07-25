@@ -1,59 +1,106 @@
-const {
-  disableOTP_DELETE_service,
-  verifyOTP_GET_service,
-} = require("../../../../services/auth/security_layers/otp/otp.services");
-const {
-    enable_question_GET_service,
-    enable_question_POST_service,
-    change_question_PUT_service,
-    disable_question_DELETE_service,
-    verify_question_during_login_GET_service,
-    verify_question_during_login_POST_service,
-} = require("../../../../services/auth/security_layers/question/question.services");
+const enable_question_POST_validation = ({ req, res, next }) => {
+  // (1) Get userId from previous middleware
+  const userId = req.userId;
 
-// =======================================================================
-// During setup:
-const enable_question_GET_controller = (req, res, next) => {
-  enable_question_GET_service({ req, res, next });
+  // (2) Get the given params from request
+  const { question, answer, hint } = req.body;
+
+  // (3) validate
+  // If question is not found
+  if (!question) {
+    return res.status(404).json({
+      name: "Invalid Input",
+      description: "You need to send the question in order to proceed.",
+    });
+  }
+  // If answer is not found
+  if (!answer) {
+    return res.status(404).json({
+      name: "Invalid Input",
+      description: "You need to send the answer in order to proceed.",
+    });
+  }
+
+  // If hint is not found
+  if (!hint) {
+    return res.status(404).json({
+      name: "Invalid Input",
+      description: "You need to send the hint in order to proceed.",
+    });
+  }
+
+  // (4) Pass data to the service function
+  return { userId, question, answer, hint };
 };
 
-const enable_question_POST_controller = async (req, res, next) => {
-  await enable_question_POST_service({ req, res, next });
+const change_question_PUT_validation = ({ req, res, next }) => {
+  // (1) Get user data from request
+  const userId = req.userId;
+  const { question, answer, hint } = req.body;
+
+  // (2) validate
+  // If question is not found
+  if (!question) {
+    return res.status(404).json({
+      name: "Invalid Input",
+      description: "You need to send the question in order to proceed.",
+    });
+  }
+  // If answer is not found
+  if (!answer) {
+    return res.status(404).json({
+      name: "Invalid Input",
+      description: "You need to send the answer in order to proceed.",
+    });
+  }
+
+  // If hint is not found
+  if (!hint) {
+    return res.status(404).json({
+      name: "Invalid Input",
+      description: "You need to send the hint in order to proceed.",
+    });
+  }
+
+  // (3) Pass dat to the service function
+  return {
+    userId,
+    question,
+    answer,
+    hint,
+  };
 };
 
-const change_question_PUT_controller = async (req, res, next) => {
-  await change_question_PUT_service({ req, res, next });
-};
+const verifySMS_duringLogin_POST_validation = ({ req, res, next }) => {
+  // (1) Get user data from request
+  const { userId, answer } = req.body;
 
-const disable_question_DELETE_controller = async (req, res, next) => {
-  await disable_question_DELETE_service({ req, res, next });
-};
+  // (2) Validate
+  // If user ID is not found
+  if (!userId) {
+    return res.status(404).json({
+      name: "Id Not Found",
+      description: "Sorry, we can't find the ID in the request",
+    });
+  }
 
-// During login:
-const verify_question_during_login_GET_controller = (
-  req,
-  res,
-  next
-) => {
-  verify_question_during_login_GET_service({ req, res, next });
-};
+  // If answer is not found
+  if (!answer) {
+    return res.status(404).json({
+      name: "Answer Not Found",
+      description:
+        "Sorry, we can't find the answer to the security question in the request",
+    });
+  }
 
-const verify_question_during_login_POST_controller = async (
-  req,
-  res,
-  next
-) => {
-  await verify_question_during_login_POST_service({ req, res, next });
+  // (3) Pass data to the service function
+  return {
+    userId, answer
+  }
 };
 
 module.exports = {
-  // During setup:
-  enable_question_GET_controller,
-  enable_question_POST_controller,
-  change_question_PUT_controller,
-  disable_question_DELETE_controller,
-
-  // During login
-  verify_question_during_login_GET_controller,
-  verify_question_during_login_POST_controller,
+  enable_question_POST_validation,
+  change_question_PUT_validation,
+  verifySMS_duringLogin_POST_validation
 };

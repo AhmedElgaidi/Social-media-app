@@ -7,6 +7,12 @@ const {
 
 const sendEmail = require("./../../../../helpers/createSendEmail");
 
+const {
+  disableTrustedEmail_DELETE_validation,
+  sendEmail_during_recovery_POST_validation,
+  verify_during_recovery_GET_validation
+} = require("./../../../../validations/auth/recovery/trusted_email/trusted_email.validations");
+
 //===========================================================================
 // (2) Send an email to a previously trusted assigned email
 
@@ -159,16 +165,7 @@ const generateTrustedEmail_POST_service = async ({ req, res, next }) => {
 // (3) verify and enable (GET)
 const disableTrustedEmail_DELETE_service = async ({ req, res, next }) => {
   // (1) Get token from request
-  const { token } = req.params;
-
-  // If token is not found
-  if (!token) {
-    return res.status(404).json({
-      name: "Token Not Found",
-      description:
-        "Sorry, we can't find the verification token in the request.",
-    });
-  }
+  const { token } = disableTrustedEmail_DELETE_validation({ req, res, next });
 
   // (2) Check if token is valid and not expired
   const decodedTrustedEmailToken =
@@ -309,15 +306,11 @@ const sendEmail_during_recovery_GET_service = async ({ req, res, next }) => {
 // (6)  Send email (POST)
 const sendEmail_during_recovery_POST_servicer = async ({ req, res, next }) => {
   // (1) Get user primary email from request
-  const { email } = req.body;
-
-  // If not found
-  if (!email) {
-    return res.status(404).json({
-      name: "Email Not Found",
-      description: "Sorry, we can't find the email in the request.",
-    });
-  }
+  const { email } = sendEmail_during_recovery_POST_validation({
+    req,
+    res,
+    next,
+  });
 
   // (2) Get user from DB
   const user = await User.findOne({
@@ -365,7 +358,7 @@ const sendEmail_during_recovery_POST_servicer = async ({ req, res, next }) => {
 // (7) verify token sent over email (GET)
 const verify_during_recovery_GET_service = async ({ req, res, next }) => {
   // (1) Get token from request parameters
-  const { token } = req.params;
+  const { token } = verify_during_recovery_GET_validation({ req, res, next });
 
   // (2) Decode the token
   const decoded_token = await verify_trusted_email_verification_token(

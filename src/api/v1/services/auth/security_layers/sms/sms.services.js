@@ -6,6 +6,14 @@ const is_phone_code_match = require("./../../../../helpers/is_phone_code_match")
 
 const bcrypt = require("bcrypt");
 
+const {
+  generateSendSMS_POST_validation,
+  verifySMS_duringSetup_POST_validation,
+  generateSendSMS_duringLogin_POST_validation,
+  verifySMS_duringLogin_POST_validation,
+  resendSMS_during_login_POST_validation
+} = require("./../../../../validations/auth/security_layers/sms/sms.validations");
+
 //==================================================================================
 
 // method (3): Text message (send code as sms)
@@ -20,33 +28,7 @@ const smsPage_during_setup_GET_service = ({ req, res, next }) => {
 
 const generateSendSMS_POST_service = async ({ req, res, next }) => {
   // (1) Get userId and phone number from request
-  const { phone } = req.body,
-    userId = req.userId;
-
-  // If userId is not found
-  if (!userId) {
-    return res.status(404).json({
-      name: "Not Found",
-      description: "We can't find your ID in the request.",
-    });
-  }
-
-  // If phone number is not found
-  if (!phone) {
-    return res.status(404).json({
-      name: "Not Found",
-      description: "We can't find your phone number in the request.",
-    });
-  }
-
-  // (2) Check if the given phone number is not valid
-  if (phone.toString().length != 11) {
-    return res.status(422).json({
-      name: "Invalid Input",
-      description:
-        "Please, provide use with your correct phone number in this format (eg. 01299929977)'\nWe only accept numbers from Egypt for now.",
-    });
-  }
+  const { phone, userId } = generateSendSMS_POST_validation({ req, res, next });
 
   // (3) Get user document
   const user = await User.findById(userId).select({
@@ -151,16 +133,11 @@ const verifySMS_duringSetup_GET_service = ({ req, res, next }) => {
 
 const verifySMS_duringSetup_POST_service = async ({ req, res, next }) => {
   // (1) Get userId and code from request
-  const { code } = req.body,
-    userId = req.userId;
-
-  // If code is not found
-  if (!code) {
-    return res.status(404).json({
-      name: "Not Found",
-      description: "We can't find the code in the request.",
-    });
-  }
+  const { code, userId } = verifySMS_duringSetup_POST_validation({
+    req,
+    res,
+    next,
+  });
 
   // (2) Get user document from DB
   const user = await User.findById(userId).select({
@@ -302,18 +279,12 @@ const generateSendSMS_duringLogin_GET_service = ({ req, res, next }) => {
 };
 
 const generateSendSMS_duringLogin_POST_service = async ({ req, res, next }) => {
-  // generate and save and send the code
-  // redirect him
   // (1) Get userId form request
-  const { userId } = req.body;
-
-  // If user ID not found
-  if (!userId) {
-    return res.status(404).json({
-      name: "ID Not Found",
-      description: "We can't find your id in the request!",
-    });
-  }
+  const { userId } = generateSendSMS_duringLogin_POST_validation({
+    req,
+    res,
+    next,
+  });
 
   // (2) Get user from DB
   const user = await User.findById(userId).select({
@@ -381,31 +352,11 @@ const verifySMS_duringLogin_GET_service = ({ req, res, next }) => {
 
 const verifySMS_duringLogin_POST_service = async ({ req, res, next }) => {
   // (1) Get userId and code from request
-  const { userId, code } = req.body;
-
-  // If UserId not found
-  if (!userId) {
-    return res.status(404).json({
-      name: "ID Not Found",
-      description: "Sorry, we can't find the ID in the request.",
-    });
-  }
-
-  // If code not found
-  if (!code) {
-    return res.status(404).json({
-      name: "Code Not Found",
-      description: "Sorry, we can't find the code in the request",
-    });
-  }
-
-  // If code length is not true
-  if (code.toString().length != 6) {
-    return res.status(422).json({
-      name: "Invalid Code Length",
-      description: "The code length can't be true!",
-    });
-  }
+  const { userId, code } = verifySMS_duringLogin_POST_validation({
+    req,
+    res,
+    next,
+  });
 
   // (2) Get user from DB
   const user = await User.findById(userId).select({
@@ -475,15 +426,7 @@ const verifySMS_duringLogin_POST_service = async ({ req, res, next }) => {
 
 const resendSMS_during_login_POST_service = async ({ req, res, next }) => {
   // (1) Get userId from request
-  const { userId } = req.body;
-
-  // If not found
-  if (!userId) {
-    return res.status(404).json({
-      name: "ID Not Found",
-      description: "Sorry, we can't find the ID in the request",
-    });
-  }
+  const { userId } = resendSMS_during_login_POST_validation({ req, res, next });
 
   // (2) Get user form DB
   const user = await User.findById(userId).select({

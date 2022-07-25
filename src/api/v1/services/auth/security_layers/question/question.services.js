@@ -1,5 +1,11 @@
 const User = require("./../../../../models/user/User");
 
+const {
+  enable_question_POST_validation,
+  change_question_PUT_validation,
+  verifySMS_duringLogin_POST_validation,
+} = require("./../../../../validations/auth/security_layers/question/question.validations");
+
 //=========================================================================
 // method (4): Security Question
 // During setup:
@@ -12,20 +18,12 @@ const enable_question_GET_service = ({ req, res, next }) => {
 
 // (2)
 const enable_question_POST_service = async ({ req, res, next }) => {
-  // (1) Get userId from previous middleware
-  const userId = req.userId;
-
-  // (2) Get the given params from request
-  const { question, answer, hint } = req.body;
-
-  // If one of them is not found
-  if (!(question || answer || hint)) {
-    return res.status(404).json({
-      name: "Invalid Input",
-      description:
-        "You need to send the 'question, answer and hint' in order to proceed.",
-    });
-  }
+  // (1) Get user data from request
+  const { userId, question, answer, hint } = enable_question_POST_validation({
+    req,
+    res,
+    next,
+  });
 
   // (3) Get user from DB
   const user = await User.findById(userId).select({
@@ -65,20 +63,12 @@ const enable_question_POST_service = async ({ req, res, next }) => {
 
 // (3)
 const change_question_PUT_service = async ({ req, res, next }) => {
-  // (1) Get userId from previous middleware
-  const userId = req.userId;
-
-  // (2) Get the given params from request
-  const { question, answer, hint } = req.body;
-
-  // If one of them is not found
-  if (!(question || answer || hint)) {
-    return res.status(404).json({
-      name: "Invalid Input",
-      description:
-        "You need to send the 'question, answer and hint' in order to proceed.",
-    });
-  }
+  // (1) Get user data from request
+  const { userId, question, answer, hint } = change_question_PUT_validation({
+    req,
+    res,
+    next,
+  });
 
   // (3) Get user from DB
   const user = await User.findById(userId).select({
@@ -186,24 +176,11 @@ const verify_question_during_login_POST_service = async ({
   next,
 }) => {
   // (1) Get userId and answer from request
-  const { userId, answer } = req.body;
-
-  // If user ID is not found
-  if (!userId) {
-    return res.status(404).json({
-      name: "Id Not Found",
-      description: "Sorry, we can't find the ID in the request",
-    });
-  }
-
-  // If answer is not found
-  if (!answer) {
-    return res.status(404).json({
-      name: "Answer Not Found",
-      description:
-        "Sorry, we can't find the answer to the security question in the request",
-    });
-  }
+  const { userId, answer } = verify_question_during_login_POST_validation({
+    req,
+    res,
+    next,
+  });
 
   // (2) Get user document from DB
   const user = await User.findById(userId).select({

@@ -1,7 +1,3 @@
-// This for relative path
-global.__require = function (file) {
-  return require(__dirname + '/' + file)
-}
 // [NOTE]: This file would be for anything not related to express app
 
 // Our modules

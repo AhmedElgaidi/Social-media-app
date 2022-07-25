@@ -1,61 +1,94 @@
-const {
-  showBackupCodes_GET_service,
-  generateBackupCodes_POST_service,
-  disableBackupCodes_DELETE_service,
-  confirmBackupCodes_GET_service,
-  confirmBackupCodes_POST_service,
-  regenerateBackupCodes_GET_service,
-  regenerateBackupCodes_POST_service,
-  verifyBackupCodes_GET_service,
-  verifyBackupCodes_POST_service,
-} = require("../../../../services/auth/recovery/backup_codes/backup_codes.services");
+const confirmBackupCodes_GET_validation = ({ req, res, next }) => {
+  // (1) Get user data from request
+  const { userId } = req.query;
 
-//=======================================================================
+  // (2) If userId not found
+  if (!userId) {
+    return res.status(404).json({
+      name: "ID Not Found",
+      description: "Sorry, we can't find the ID in the request parameters",
+    });
+  }
 
-const showBackupCodes_GET_controller = async (req, res, next) => {
-  await showBackupCodes_GET_service({ req, res, next });
+  // (3) Pass data to the service function
+  return {
+    userId,
+  };
 };
 
-const generateBackupCodes_POST_controller = async (req, res, next) => {
-  await generateBackupCodes_POST_service({ req, res, next });
+const confirmBackupCodes_POST_validation = ({ req, res, next }) => {
+  // (1) Get user data from request
+  const { userId } = req.body || req.query;
+
+  // (2) If userId not found
+  if (!userId) {
+    return res.status(404).json({
+      name: "ID Not Found",
+      description: "Sorry, we can't find the ID in the request. bla bla bla",
+    });
+  }
+
+  // (3) Pass data to the service function
+  return { userId };
 };
 
-const disableBackupCodes_DELETE_controller = async (req, res, next) => {
-  await disableBackupCodes_DELETE_service({ req, res, next });
+const regenerateBackupCodes_POST_validation = ({ req, res, next }) => {
+  // (1) Get user data from request
+  const { userId } = req.body || req.query;
+
+  // (2) If userId not found
+  if (!userId) {
+    return res.status(404).json({
+      name: "ID Not Found",
+      description: "Sorry, we can't find the ID in the request.ds",
+    });
+  }
+
+  // (3) Pass data to the service function
+  return {
+    userId,
+  };
 };
 
-const confirmBackupCodes_GET_controller = async (req, res, next) => {
-  await confirmBackupCodes_GET_service({ req, res, next });
-};
+const verifyBackupCodes_POST_validation = ({ req, res, next }) => {
+  // (1) Get user data from request
+  const { userId, code } = req.body;
 
-const confirmBackupCodes_POST_controller = async (req, res, next) => {
-  await confirmBackupCodes_POST_service({ req, res, next });
-};
+  // (2) Validate
+  // If userId not found
+  if (!userId) {
+    return res.status(404).json({
+      name: "ID Not Found",
+      description: "Sorry, we can't find the ID in the request.",
+    });
+  }
 
-const regenerateBackupCodes_GET_controller = (req, res, next) => {
-  regenerateBackupCodes_GET_service({ req, res, next });
-};
+  // If code not found
+  if (!code) {
+    return res.status(404).json({
+      name: "Code Not Found",
+      description: "Sorry, we can't find the backup code in the request.",
+    });
+  }
 
-const regenerateBackupCodes_POST_controller = async (req, res, next) => {
-  await regenerateBackupCodes_POST_service({ req, res, next });
-};
+  // IF code length isn't correct
+  if (code.length != 12) {
+    return res.status(422).json({
+      name: "Invalid Input",
+      description: "Sorry, the code length can't be true!",
+    });
+  }
 
-const verifyBackupCodes_GET_controller = (req, res, next) => {
-  verifyBackupCodes_GET_service({ req, res, next });
-};
-
-const verifyBackupCodes_POST_controller = async (req, res, next) => {
-  await verifyBackupCodes_POST_service({ req, res, next });
+  // (3) Pass data to the service function
+  return {
+    userId,
+    code,
+  };
 };
 
 module.exports = {
-  showBackupCodes_GET_controller,
-  generateBackupCodes_POST_controller,
-  disableBackupCodes_DELETE_controller,
-  confirmBackupCodes_GET_controller,
-  confirmBackupCodes_POST_controller,
-  regenerateBackupCodes_GET_controller,
-  regenerateBackupCodes_POST_controller,
-  verifyBackupCodes_GET_controller,
-  verifyBackupCodes_POST_controller,
+  confirmBackupCodes_GET_validation,
+  confirmBackupCodes_POST_validation,
+  regenerateBackupCodes_POST_validation,
+  verifyBackupCodes_POST_validation
 };

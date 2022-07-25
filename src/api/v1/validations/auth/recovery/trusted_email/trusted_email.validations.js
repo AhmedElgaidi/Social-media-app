@@ -1,50 +1,62 @@
-const {
-  generateTrustedEmail_GET_service,
-  generateTrustedEmail_POST_service,
-  disableTrustedEmail_DELETE_service,
-  verifyEnableTrustedEmail_GET_service,
-  sendEmail_during_recovery_GET_service,
-  sendEmail_during_recovery_POST_servicer,
-  verify_during_recovery_GET_service,
-} = require("../../../../services/auth/recovery/trusted_email/trusted_email.services");
+const { TokenExpiredError } = require("jsonwebtoken");
 
-//======================================================================
-// During Setup:
-const generateTrustedEmail_GET_controller = async (req, res, next) => {
-  await generateTrustedEmail_GET_service({ req, res, next });
+const disableTrustedEmail_DELETE_validation = ({ req, res, next }) => {
+  // (1) Get user data from request
+  const { token } = req.params;
+
+  // (2) If token is not found
+  if (!token) {
+    return res.status(404).json({
+      name: "Token Not Found",
+      description:
+        "Sorry, we can't find the verification token in the request.",
+    });
+  }
+
+  // (3) Pass data to the service function
+  return {
+    token,
+  };
 };
 
-const generateTrustedEmail_POST_controller = async (req, res, next) => {
-  await generateTrustedEmail_POST_service({ req, res, next });
+const sendEmail_during_recovery_POST_validation = ({ req, res, next }) => {
+  // (1) Get user data from request
+  const { email } = req.body;
+
+  // (2) If not found
+  if (!email) {
+    return res.status(404).json({
+      name: "Email Not Found",
+      description: "Sorry, we can't find the email in the request.",
+    });
+  }
+
+  // (3) Pass data to the service function
+  return {
+    email,
+  };
 };
 
-const disableTrustedEmail_DELETE_controller = async (req, res, next) => {
-  await disableTrustedEmail_DELETE_service({ req, res, next });
-};
+const verify_during_recovery_GET_validation = ({ req, res, next }) => {
+  // (1) Get user data from request
+  const { token } = req.body;
 
-const verifyEnableTrustedEmail_GET_controller = async (req, res, next) => {
-  await verifyEnableTrustedEmail_GET_service({ req, res, next });
-};
+  // (2) If not found
+  if (!token) {
+    return res.status(404).json({
+      name: "Token Not Found",
+      description: "Sorry, we can't find the token in the request parameters.",
+    });
+  }
 
-// During recovery
-const sendEmail_during_recovery_GET_controller = (req, res, next) => {
-  sendEmail_during_recovery_GET_service({ req, res, next });
-};
-
-const sendEmail_during_recovery_POST_controller = async (req, res, next) => {
-  await sendEmail_during_recovery_POST_servicer({ req, res, next });
-};
-
-const verify_during_recovery_GET_controller = async (req, res, next) => {
-  await verify_during_recovery_GET_service({ req, res, next });
+  // (3) Pass token to the service function
+  return {
+    token,
+  };
 };
 
 module.exports = {
-  generateTrustedEmail_GET_controller,
-  generateTrustedEmail_POST_controller,
-  disableTrustedEmail_DELETE_controller,
-  verifyEnableTrustedEmail_GET_controller,
-  sendEmail_during_recovery_GET_controller,
-  sendEmail_during_recovery_POST_controller,
-  verify_during_recovery_GET_controller,
+  disableTrustedEmail_DELETE_validation,
+  sendEmail_during_recovery_POST_validation,
+  verify_during_recovery_GET_validation,
 };
