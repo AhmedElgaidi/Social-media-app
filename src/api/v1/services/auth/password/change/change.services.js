@@ -1,6 +1,6 @@
 const User = require("./../../../../models/user/User");
 
-const correct_password = require("./../../../../helpers/password");
+const compare_hash = require("./../../../../helpers/compare_hash");
 
 const {
   changePassword_POST_validation,
@@ -20,7 +20,7 @@ const changePassword_POST_service = async ({ req, res, next }) => {
   });
 
   // (3) check if his old password is correct
-  const isCorrectPassword = await correct_password(
+  const isCorrectPassword = await compare_hash(
     old_password,
     user.account.password.value
   );

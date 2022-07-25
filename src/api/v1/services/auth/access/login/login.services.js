@@ -1,10 +1,10 @@
 const User = require("./../../../../models/user/User");
 
 const {
-  create_account_activation_token,
-} = require("./../../../../helpers/tokens/accountActivation");
+  create_token,
+} = require("./../../../../helpers/token");
 
-const correct_password = require("./../../../../helpers/password");
+const compare_hash = require("./../../../../helpers/compare_hash");
 
 const sendEmail = require("./../../../../helpers/createSendEmail");
 
@@ -25,7 +25,7 @@ const login_GET_service = ({ req, res, next }) => {
 const login_POST_service = async ({ req, res, next }) => {
   // (1) Get user data from request
   const { email, password } = login_POST_validation({ req, res, next });
-  console.log(email);
+
   // (2) check for user email in our DB
   const user = await User.findOne({
     "account.email.value": email,
@@ -40,7 +40,7 @@ const login_POST_service = async ({ req, res, next }) => {
   }
 
   // (3) Check for password match
-  const isCorrectPassword = await correct_password(
+  const isCorrectPassword = await compare_hash(
     password,
     user.account.password.value
   );
@@ -73,8 +73,12 @@ const login_POST_service = async ({ req, res, next }) => {
     // send him email. So, he can activate his account again!!
 
     // (1) Create the account activation token
-    const activationToken = await create_account_activation_token(
-      user.account.email.value
+    const activationToken = await create_token(
+      {
+        id: user.id,
+        secret: process.env.ACCOUNT_ACTIVATION_TOKEN_SECRET,
+        expiresIn: ACCOUNT_ACTIVATION_TOKEN_SECRET_EXPIRES_IN
+      }
     );
 
     // (2) Assign the token to the user document

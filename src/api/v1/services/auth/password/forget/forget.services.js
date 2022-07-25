@@ -1,8 +1,6 @@
 const User = require("./../../../../models/user/User");
 
-const {
-  create_password_reset_token_token,
-} = require("./../../../../helpers/tokens/resetToken");
+const { create_token } = require("./../../../../helpers/token");
 
 const sendEmail = require("./../../../../helpers/createSendEmail");
 
@@ -35,7 +33,11 @@ const forgetPassword_POST_service = async ({ req, res, next }) => {
   }
 
   // (3) Create password reset token
-  const passwordResetToken = await create_password_reset_token_token(user.id);
+  const passwordResetToken = await create_token({
+    id: user.id,
+    secret: process.env.PASSWORD_RESET_TOKEN_SECRET,
+    expiresIn: process.env.PASSWORD_RESET_TOKEN_SECRET_EXPIRES_IN,
+  });
 
   // (4) Assign the token to the user document
   user.account.reset.password_reset_token = passwordResetToken;

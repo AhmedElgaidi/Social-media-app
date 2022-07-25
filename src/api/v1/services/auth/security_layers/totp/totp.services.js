@@ -8,10 +8,6 @@ const {
   verifyTOTP_during_login_POST_validation
 } = require("./../../../../validations/auth/security_layers/totp/totp.validations");
 
-const {
-  verifySMS_duringLogin_GET_controller,
-} = require("../../../../controllers/auth/security_layers/sms/sms.controllers");
-
 //========================================================================
 const all2faMethods_GET_service = async ({ req, res, next }) => {
   // (1) Get user from DB

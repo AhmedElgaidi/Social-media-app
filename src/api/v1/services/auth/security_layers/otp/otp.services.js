@@ -2,7 +2,7 @@ const User = require("./../../../../models/user/User");
 
 const sendEmail = require("./../../../../helpers/createSendEmail");
 
-const is_otp_match = require("./../../../../helpers/is_otp_match");
+const compare_hash = require("./../../../../helpers/compare_hash");
 
 const {
   verifyOTP_POST_validation,
@@ -111,7 +111,7 @@ const verifyOTP_POST_service = async ({ req, res, next }) => {
   }
 
   // (4) Check if otp against saved otp in our DB
-  const is_match = await is_otp_match(otp, otp_found);
+  const is_match = await compare_hash(otp, otp_found);
 
   // NO match?
   if (!is_match) {

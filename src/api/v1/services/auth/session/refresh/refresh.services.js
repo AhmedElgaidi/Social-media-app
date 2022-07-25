@@ -1,13 +1,6 @@
 const User = require("./../../../../models/user/User");
 
-const {
-  verify_refresh_token,
-  create_refresh_token,
-} = require("./../../../../helpers/tokens/refreshToken");
-
-const {
-  create_access_token,
-} = require("./../../../../helpers/tokens/accessToken");
+const { create_token, verify_token } = require("./../../../../helpers/token");
 
 const {
   refreshToken_POST_validation,
@@ -20,7 +13,10 @@ const refreshToken_POST_service = async ({ req, res, next }) => {
   const refresh_token = refreshToken_POST_validation({ req, res, next });
 
   // (3) verify refresh token
-  const decodedRefreshToken = await verify_refresh_token(refresh_token).catch(
+  const decodedRefreshToken = await verify_token({
+    token: refresh_token,
+    secret: process.env.ACCESS_TOKEN,
+  }).catch(
     // Errors in refresh token verification:
     (error) => {
       //  (1) if refresh token is manipulated
@@ -45,8 +41,17 @@ const refreshToken_POST_service = async ({ req, res, next }) => {
   );
 
   // (4) Create new access and refresh tokens
-  const newAccessToken = await create_access_token(decodedRefreshToken._id);
-  const newRefreshToken = await create_refresh_token(decodedRefreshToken._id);
+  const newAccessToken = await create_token({
+    id: decodedRefreshToken._id,
+    secret: process.env.ACCESS_TOKEN_SECRET,
+    expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN,
+  });
+
+  const newRefreshToken = await create_token({
+    id: decodedRefreshToken._id,
+    secret: process.env.REFRESH_TOKEN_SECRET,
+    expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN,
+  });
 
   // (5) Get user document from decoded refresh token
   await User.findById(decodedRefreshToken._id).then(async (user) => {

@@ -1,16 +1,13 @@
 const User = require("./../../../../models/user/User");
 
-const {
-  create_trusted_email_verification_token,
-  verify_trusted_email_verification_token,
-} = require("./../../../../helpers/tokens/trustedEmail");
+const { create_token, verify_token } = require("./../../../../helpers/token");
 
 const sendEmail = require("./../../../../helpers/createSendEmail");
 
 const {
   disableTrustedEmail_DELETE_validation,
   sendEmail_during_recovery_POST_validation,
-  verify_during_recovery_GET_validation
+  verify_during_recovery_GET_validation,
 } = require("./../../../../validations/auth/recovery/trusted_email/trusted_email.validations");
 
 //===========================================================================
@@ -130,7 +127,11 @@ const generateTrustedEmail_POST_service = async ({ req, res, next }) => {
   // If everything is okay. Then,
 
   // (5) Generate a token for trusted email verification
-  const token = await create_trusted_email_verification_token(user.id);
+  const token = await create_token({
+    id: user.id,
+    secret: process.env.TRUSTED_EMAIL_VERIFICATION_TOKEN_SECRET,
+    expiresIn: process.env.TRUSTED_EMAIL_VERIFICATION_TOKEN_SECRET_EXPIRES_IN,
+  });
 
   // (6) Update user document
   user.account.recovery.methodTwo.email.verification_token = token;
@@ -168,26 +169,28 @@ const disableTrustedEmail_DELETE_service = async ({ req, res, next }) => {
   const { token } = disableTrustedEmail_DELETE_validation({ req, res, next });
 
   // (2) Check if token is valid and not expired
-  const decodedTrustedEmailToken =
-    await verify_trusted_email_verification_token(token).catch(
-      // Errors in token verification:
-      (error) => {
-        //  (1) If token is manipulated
-        if (error.toString().includes("invalid signature")) {
-          return res.status(422).json({
-            name: "Invalid Token",
-            description: "Sorry, your token is manipulated!!",
-          });
-        }
-
-        // (2) if token is expired
-        return res.status(401).json({
+  const decodedTrustedEmailToken = await verify_token({
+    token,
+    secret: process.env.TRUSTED_EMAIL_VERIFICATION_TOKEN_SECRET,
+  }).catch(
+    // Errors in token verification:
+    (error) => {
+      //  (1) If token is manipulated
+      if (error.toString().includes("invalid signature")) {
+        return res.status(422).json({
           name: "Invalid Token",
-          description:
-            "Sorry, your token is already expired. Please, click the resend button to receive a new email with an active link!",
+          description: "Sorry, your token is manipulated!!",
         });
       }
-    );
+
+      // (2) if token is expired
+      return res.status(401).json({
+        name: "Invalid Token",
+        description:
+          "Sorry, your token is already expired. Please, click the resend button to receive a new email with an active link!",
+      });
+    }
+  );
 
   // (2) Get user from DB
   const user = await User.findById(decodedTrustedEmailToken._id).select({

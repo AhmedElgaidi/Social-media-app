@@ -1,7 +1,6 @@
 const User = require("./../../../../models/user/User");
-const {
-  verify_email_verification_token,
-} = require("./../../../../helpers/tokens/emailVerificationToken");
+
+const { verify_token } = require("./../../../../helpers/token");
 
 const {
   verify_POST_validation,
@@ -25,7 +24,10 @@ const verify_POST_service = async ({ req, res, next }) => {
     });
   }
   // (4) Validate and check it's expiration status
-  await verify_email_verification_token(verificationToken);
+  await verify_token({
+    token: verificationToken,
+    secret: process.env.EMAIL_VERIFICATION_TOKEN_SECRET_EXPIRES_IN,
+  });
 
   // (5) Make account's email verified
   user.account.email.is_verified = true;

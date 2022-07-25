@@ -1,8 +1,6 @@
 const User = require("./../../../../models/user/User");
 
-const {
-  create_email_verification_token,
-} = require("./../../../../helpers/tokens/emailVerificationToken");
+const { create_token } = require("./../../../../helpers/token");
 
 const sendEmail = require("./../../../../helpers/createSendEmail");
 
@@ -57,7 +55,12 @@ const signup_POST_service = async ({ req, res, next }) => {
   });
 
   // (3) Create and assign email verification token to user document
-  const verificationToken = await create_email_verification_token(email);
+  const verificationToken = await create_token({
+    id: user.id,
+    secret: process.env.EMAIL_VERIFICATION_TOKEN_SECRET,
+    expiresIn: EMAIL_VERIFICATION_TOKEN_SECRET_EXPIRES_IN,
+  });
+
   user.account.email.verification_token = verificationToken;
 
   // (4) Save user document into DB

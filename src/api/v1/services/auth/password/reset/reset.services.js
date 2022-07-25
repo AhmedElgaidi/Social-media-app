@@ -1,8 +1,6 @@
 const User = require("./../../../../models/user/User");
 
-const {
-  verify_password_reset_token_token,
-} = require("./../../../../helpers/tokens/resetToken");
+const { verify_token } = require("./../../../../helpers/token");
 
 const {
   resetPassword_POST_validation,
@@ -27,7 +25,10 @@ const resetPassword_POST_service = async ({ req, res, next }) => {
   } = resetPassword_POST_validation({ req, res, next });
 
   // (2) Verify password reset token
-  await verify_password_reset_token_token(passwordResetToken).catch((error) => {
+  await verify_token({
+    token,
+    secret: process.env.PASSWORD_RESET_TOKEN_SECRET,
+  }).catch((error) => {
     // (1) If user manipulated the token
     if (error.toString().includes("invalid signature")) {
       return res.status(422).json({

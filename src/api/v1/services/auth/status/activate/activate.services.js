@@ -1,8 +1,6 @@
 const User = require("./../../../../models/user/User");
 
-const {
-  verify_account_activation_token,
-} = require("./../../../../helpers/tokens/accountActivation");
+const { verify_token } = require("./../../../../helpers/token");
 
 const {
   activateAccount_POST_validation,
@@ -15,7 +13,10 @@ const activateAccount_POST_service = async ({ req, res, next }) => {
   const token = activateAccount_POST_validation({ req, res, next });
 
   // (2) Validate token and check it's expiration date
-  await verify_account_activation_token(token).catch((error) => {
+  await verify_token({
+    token,
+    expiresIn: process.env.ACCOUNT_ACTIVATION_TOKEN_SECRET_EXPIRES_IN,
+  }).catch((error) => {
     // (1) if user manipulated the token
     if (error.toString().includes("invalid signature")) {
       return res.status(422).json({

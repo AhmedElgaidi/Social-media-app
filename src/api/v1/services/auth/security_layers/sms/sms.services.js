@@ -4,8 +4,6 @@ const twilio = require("twilio");
 
 const is_phone_code_match = require("./../../../../helpers/is_phone_code_match");
 
-const bcrypt = require("bcrypt");
-
 const {
   generateSendSMS_POST_validation,
   verifySMS_duringSetup_POST_validation,
@@ -13,6 +11,7 @@ const {
   verifySMS_duringLogin_POST_validation,
   resendSMS_during_login_POST_validation
 } = require("./../../../../validations/auth/security_layers/sms/sms.validations");
+const compare_hash = require("../../../../helpers/compare_hash");
 
 //==================================================================================
 
@@ -168,7 +167,7 @@ const verifySMS_duringSetup_POST_service = async ({ req, res, next }) => {
   }
 
   // (5) Check the code against the saved code in DB
-  const is_match = await is_phone_code_match(code, hashedCode);
+  const is_match = await compare_hash(code, hashedCode);
 
   // If code is not valid
   if (!is_match) {
@@ -395,7 +394,7 @@ const verifySMS_duringLogin_POST_service = async ({ req, res, next }) => {
   }
 
   // (5) Check for code validity
-  const is_code_same = await bcrypt.compare(
+  const is_code_same = await compare_hash(
     code,
     user.account.two_fa.sms.value
   );
