@@ -128,3 +128,28 @@
 - **For:** If user is enabling this feature, he would be asked to give us the 6 digits code from the same authenticating app that he should saved the secret in it before.
 - **Requirments:** Just valid credentials + valid 6 digits code.
 - **Result:** Access to his account unless he is enabling other security layers.
+
+### Security Layer (2): OTP (One-Time-Password) as 2FA 
+#### (19) Enable OTP:
+- For: An aditional security layer besides the credentials (email + password) + TOTP (if enabled).
+- **Requirments:** Just a valid access token (or at least a valid refresh token that brings him valid access token).
+- Result: On every new login device attempt we send him a 6 digits code to his primary email mailbox.
+
+#### (20) Verify OTP:
+- For: After sending the user the 6 digits code to his mailbox, he should send them back withn 6h before getting expired.
+- Requirments: Valid credentials + Access to mailbox.
+- Result: The user useses this sent code to access his account.
+
+#### (21) Disable OTP: 
+- For: The user can disable this feature whenever he wants.
+- **Requirments:** Just a valid access token (or at least a valid refresh token that brings him valid access token).
+- Result: OTP feature is disabled and the user account is less secure now.
+
+#### (22) Resend OTP: 
+- For: If the 6 digits code were expired, the user can ask for new valid ones.
+- Requirments: Correct credentials + The old 6 digits should be expired.
+- Result: Recieves an email with the new 6 digit codes. so, he can access our private resoucres.
+
+
+### Security Layer (3): SMS (6 digits code over sms message) as 2FA 
+#### (23)
