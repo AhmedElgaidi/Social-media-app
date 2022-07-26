@@ -72,7 +72,7 @@ module.exports = routes_middleware = (app) => {
       API: {
         source_code: "https://github.com/AhmedElgaidi/Social-media-app",
         API_documentation:
-          "https://documenter.getpostman.com/view/8694181/UzXM1yep#c559612b-3c64-481a-a03f-c7b7560646ee",
+          "https://documenter.getpostman.com/view/8694181/UzXM1yep",
       },
     });
   });
