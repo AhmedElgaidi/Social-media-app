@@ -1,7 +1,3 @@
-# SSL
-server.crt
-server.key
-
 # Logs
 logs
 *.log
