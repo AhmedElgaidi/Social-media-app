@@ -1,9 +1,13 @@
 
 # Authenticating API:
 
+### Project Links:
+- [Live API on Heroku](https://social-app-260.herokuapp.com/)
+- [API postman documentation](https://www.getpostman.com/collections/010c1090e2dfafab270c)
+
 ### Personal project goals:
-- Learn how to document an API.
-- Learn how to structure/ organize a large scale project (API).
+- Learn how to document a project (e.g. API).
+- Learn how to structure/ organize a large scale project.
 - Learn more about the security measures and options that should be found in any modern API.
 
 
