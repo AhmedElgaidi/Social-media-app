@@ -131,88 +131,88 @@
 
 ### Security Layer (2): OTP (One-Time-Password) as 2FA 
 #### (19) Enable OTP:
-- For: An aditional security layer besides the credentials (email + password) + TOTP (if enabled).
+- **For:** An aditional security layer besides the credentials (email + password) + TOTP (if enabled).
 - **Requirments:** Just a valid access token (or at least a valid refresh token that brings him valid access token).
-- Result: On every new login device attempt we send him a 6 digits code to his primary email mailbox.
+- **Result:** On every new login device attempt we send him a 6 digits code to his primary email mailbox.
 
 #### (20) Verify OTP:
-- For: After sending the user the 6 digits code to his mailbox, he should send them back withn 6h before getting expired.
-- Requirments: Valid credentials + Access to mailbox.
-- Result: The user useses this sent code to access his account.
+- **For:** After sending the user the 6 digits code to his mailbox, he should send them back withn 6h before getting expired.
+- **Requirments:** Valid credentials + Access to mailbox.
+- **Result:** The user useses this sent code to access his account.
 
 #### (21) Disable OTP: 
-- For: The user can disable this feature whenever he wants.
+- **For:** The user can disable this feature whenever he wants.
 - **Requirments:** Just a valid access token (or at least a valid refresh token that brings him valid access token).
-- Result: OTP feature is disabled and the user account is less secure now.
+- **Result:** OTP feature is disabled and the user account is less secure now.
 
 #### (22) Resend OTP: 
-- For: If the 6 digits code were expired, the user can ask for new valid ones.
-- Requirments: Correct credentials + The old 6 digits should be expired.
-- Result: Recieves an email with the new 6 digit codes. so, he can access our private resoucres.
+- **For:** If the 6 digits code were expired, the user can ask for new valid ones.
+- **Requirments:** Correct credentials + The old 6 digits should be expired.
+- **Result:** Recieves an email with the new 6 digit codes. so, he can access our private resoucres.
 
 
 ### Security Layer (3): SMS (6 digits code over sms message) as 2FA 
 #### (23) Enable SMS:
--  For: Aditional security layer besides (correct credential, TOTP, OTP) layers.
+- **For:** Aditional security layer besides (correct credential, TOTP, OTP) layers.
 - **Requirments:** Just a valid access token (or at least a valid refresh token that brings him valid access token) + valid phone number.
-- Result: started the sms as 2fa process.
+- **Result:** started the sms as 2fa process.
 
 #### (24) Verify phone number:
-- For: For verifing the given phone number, by sending him a trial 6 digits code and wait for them.
-- Requirments: Just access to a valid phone number.
-- Result: If the code sent to him is same as the given one and not expired then the user finished the second step successfully.
+- **For:** For verifing the given phone number, by sending him a trial 6 digits code and wait for them.
+- **Requirments:** Just access to a valid phone number.
+- **Result:** If the code sent to him is same as the given one and not expired then the user finished the second step successfully.
 
 #### (25) Resend Message:
-- For: If the 6 digits code get expired, the user can ask for new ones durin the setup
-- Requirments: Access to a valid phone number and expired 6 digits code.
-- Result: We send him again a new code, so, he can continue the enabling process.
+- **For:** If the 6 digits code get expired, the user can ask for new ones durin the setup
+- **Requirments:** Access to a valid phone number and expired 6 digits code.
+- **Result:** We send him again a new code, so, he can continue the enabling process.
 
 #### (26) Disable SMS:
-- For: The user can disable this feature whenever he wants.
+- **For:** The user can disable this feature whenever he wants.
 - **Requirments:** Just a valid access token (or at least a valid refresh token that brings him valid access token).
-- Result: The feature is disabled.
+- **Result:** The feature is disabled.
 
 #### (27) Send SMS Code during login:
-- For: After user has enabled this feature, now we send him a 6 digits code on every new login attempt in order to authenticate him.
-- Requirments: Correct credentials(email, password) + This feature is enabled to his account.
-- Result: The user recieves a 6 digits codes to prove his identity.
+- **For:** After user has enabled this feature, now we send him a 6 digits code on every new login attempt in order to authenticate him.
+- **Requirments:** Correct credentials(email, password) + This feature is enabled to his account.
+- **Result:** The user recieves a 6 digits codes to prove his identity.
 
 
-ُُ#### (28) Verify SMS Code during login:
-- For: After user reciveve the 6 digits code to his phone number, he needs to send them back to use to verify them. 
-- Requirments: Correct credentials + this feature is enabled + access to phone.
-- Result: The user can complete his logn attempt.
+#### (28) Verify SMS Code during login:
+- **For:** After user reciveve the 6 digits code to his phone number, he needs to send them back to use to verify them. 
+- **Requirments:** Correct credentials + this feature is enabled + access to phone.
+- **Result:** The user can complete his logn attempt.
 
 #### (29) Resend SMS during login:
-- For: If the sent 6 digits code during login attempt is expired, the user can ask for new one.
-- Requirments: Correct credentials(email+ password) + enabling this feature + access to phone number + already expired code.
-- Resutlt: Access to our private resources.
+- **For:** If the sent 6 digits code during login attempt is expired, the user can ask for new one.
+- **Requirments:** Correct credentials(email+ password) + enabling this feature + access to phone number + already expired code.
+- **Resutlt:** Access to our private resources.
 
 ### Security Layer (4): Security question as 2FA 
 #### (30) Enable:
-- For: Aditional security layer behind the credentials(email + pasword), TOTP, OTP, SMS.
+- **For:** Aditional security layer behind the credentials(email + pasword), TOTP, OTP, SMS.
 - **Requirments:** Just a valid access token (or at least a valid refresh token that brings him valid access token) + question + answer + hint
-- Result: Enabled this security layer.
+- **Result:** Enabled this security layer.
 
 #### (31) Change (update) question/ answer/ hint:
-- For: The user can chane those data whenever he wants.
+- **For:** The user can chane those data whenever he wants.
 - **Requirments:** Just a valid access token (or at least a valid refresh token that brings him valid access token).
-- Result: Mor control over this security layer.
+- **Result:** Mor control over this security layer.
 
 
 #### (32) Disable:
-- For: The user can disable this feature whenever he wants.
+- **For:** The user can disable this feature whenever he wants.
 - **Requirments:** Just a valid access token (or at least a valid refresh token that brings him valid access token).
-- Result: This feature would be disabled.
+- **Result:** This feature would be disabled.
 
 
 #### (33) Verifying during login attempt:
-- For: We show the user the question and the hint after successfull login attempt and waits for his answer to be verified.
-- Requirments: Correct credentials(email + password) + this feature is enabled.
-- Result: Access to our private resoucres again.
+- **For:** We show the user the question and the hint after successfull login attempt and waits for his answer to be verified.
+- **Requirments:** Correct credentials(email + password) + this feature is enabled.
+- **Result:** Access to our private resoucres again.
 
 
-### (34) show all account 2FA methods:
-- For: The user can know the status (enabled/ disabled) of each layer/ method in his account.
+#### (34) show all account 2FA methods:
+- **For:** The user can know the status (enabled/ disabled) of each layer/ method in his account.
 - **Requirments:** Just a valid access token (or at least a valid refresh token that brings him valid access token).
-- Result: More control over his account security options.
+- **Result:** More control over his account security options.
