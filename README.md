@@ -44,9 +44,9 @@
 
 ### Project Features (In details):
 #### 1) sign Up
-##### - For: It's for creating a new account.
-##### - Requirments: first name, last name, user name, email, password, confirm password fields.
-##### - Result: Create a new user document in our DB.
+- **For**: It's for creating a new account.
+- **Requirments**: first name, last name, user name, email, password, confirm password fields.
+- **Result**: Create a new user document in our DB.
 
 2) Verify Account:
 - For: It's for verifing the given email before any further processes.
