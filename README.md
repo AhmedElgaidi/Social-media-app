@@ -44,22 +44,22 @@
 
 ### Project Features (In details):
 #### 1) sign Up
-- **For**: It's for creating a new account.
-- **Requirments**: first name, last name, user name, email, password, confirm password fields.
-- **Result**: Create a new user document in our DB.
+- **For:** It's for creating a new account.
+- **Requirments:** first name, last name, user name, email, password, confirm password fields.
+- **Result:** Create a new user document in our DB.
 
-2) Verify Account:
-- For: It's for verifing the given email before any further processes.
-- Requirments: Just a valid email to recieve email in it's mailbox.
-- Result: User recieves email verification account.
+#### 2) Verify Account:
+- **For:** It's for verifing the given email before any further processes.
+- **Requirments:** Just a valid email to recieve email in it's mailbox.
+- **Result:** User recieves email verification account.
 
-3) Login Account: (Note: User can create as many session as he wants and can control them all in an easy way)
-- For: After user verifies his given email, we redirect him to the login page, so he can get a sesion (access + refresh token).
-- Requirments: Just email and password.
-- Result: User gets access token (valid for 15min.) and refresh token (valid for 1 day) to access any private endpoint.
+#### 3) Login Account: (Note: User can create as many session as he wants and can control them all in an easy way)
+- **For: ** After user verifies his given email, we redirect him to the login page, so he can get a sesion (access + refresh token).
+- **Requirments: ** Just email and password.
+- **Result: ** User gets access token (valid for 15min.) and refresh token (valid for 1 day) to access any private endpoint.
 
-4) Logout:
-- For: The user can log out from our system whenever he wants.
-- Requirments: Just a valid access token (or at least a valid refresh token that brings him valid access token).
-- Result: We invalidates the session tokens.
+#### 4) Logout:
+- **For: ** The user can log out from our system whenever he wants.
+- **Requirments: ** Just a valid access token (or at least a valid refresh token that brings him valid access token).
+- **Result: ** We invalidates the session tokens.
 
