@@ -6,12 +6,6 @@
 - [Live API on Heroku](https://social-app-260.herokuapp.com/)
 - [API postman documentation](https://documenter.getpostman.com/view/8694181/UzXM1yep)
 
-### Essential Used Technologies:
-- Node.js/ Express.js 
-- MongoDb/ Mongoose.
-- JWT.
-- Speakeasy.
-- Twilio.
 
 ### Personal project goals:
 - Learn how to document a project (e.g. API).
@@ -93,4 +87,17 @@
 - **Requirments:** Just access to his primary mailbox.
 - **Result:** Direct access to his account and our private resources.
 
-#### (11) 
+#### (11) Update sesesion:
+- **For:** When the access token gets expired, the user can use his refresh token to get a new access and refresh tokens.
+- **Requirments:** Just a valid refresh token.
+- **Result:** Access to our private resources again.
+
+##### (12) Show All active sessions:
+- **For:** This endpoint tells the user how many session are active and information about each one. So, he can cancel any of them as he want.
+- **Requirments:** Just a valid access token (or at least a valid refresh token that brings him valid access token).
+- **Result:** Can show and controll over all his account session by using his current sesssion (device).
+
+##### (13) cancel session/ Revoke tokens:
+- **For:** The user can to cancel any sesssion for any reason (expired, lost, compromised, etc...).
+- **Requirments:** Just a valid access token (or at least a valid refresh token that brings him valid access token).
+- *8Result:** More control over his account active sessions.
