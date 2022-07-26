@@ -56,6 +56,15 @@ module.exports = routes_middleware = (app) => {
     trustedEmail_routes,
   ]);
 
+  // Home route
+  app.use(
+    "/",
+    res.status(200).json({
+      status: "Success",
+      message: "Welcome to my authentication API | By: Ahmed Elgaidi",
+    })
+  );
+
   // 404 handler
   app.all("*", (req, res, next) => {
     // for all HTTP methods and unhandled routes
