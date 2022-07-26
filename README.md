@@ -1,6 +1,13 @@
 
 # Authenticating API:
-### Features (In Short):
+
+### Personal project goals:
+- Learn how to document an API.
+- Learn how to structure/ organize a large scale project (API).
+- Learn more about the security measures and options that should be found in any modern API.
+
+
+### Project Features (In Short):
 1) Sign Up (Create new account).
 2) Log In (Get access and refresh tokens).
 3) Verify Account (verify email).
