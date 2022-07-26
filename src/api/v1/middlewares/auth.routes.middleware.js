@@ -59,8 +59,20 @@ module.exports = routes_middleware = (app) => {
   // Home route
   app.use("/", (req, res, next) => {
     res.status(200).json({
-      status: "Success",
-      message: "Welcome to my authentication API | By: Ahmed Elgaidi",
+      message: "Welcome to my social media API.",
+      description: "This is an advanced authentication API with many security features.",
+      creator: {
+        name: "Ahmed Elgaidi",
+        contacts: {
+          linkedin: "www.linkedin.com/in/ahmedelgaidi",
+          github: "https://github.com/AhmedElgaidi",
+        },
+      },
+      API: {
+        source_code: "https://github.com/AhmedElgaidi/Social-media-app",
+        API_documentation:
+          "https://www.getpostman.com/collections/010c1090e2dfafab270c",
+      },
     });
   });
 
