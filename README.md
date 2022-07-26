@@ -1,6 +1,6 @@
 
 # Authenticating API:
-![A screenshot]("https://freeimage.host/i/STChaS")
+![A screenshot]("https://raw.githubusercontent.com/AhmedElgaidi/Social-media-app/main/public/sreenshot.png")
 
 ### Project Links:
 - [Live API on Heroku](https://social-app-260.herokuapp.com/)
