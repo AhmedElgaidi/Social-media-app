@@ -6,9 +6,12 @@ const sendEmail = require("./../../../../helpers/createSendEmail");
 
 const {
   disableTrustedEmail_DELETE_validation,
+  verifyEnableTrustedEmail_GET_validation,
   sendEmail_during_recovery_POST_validation,
   verify_during_recovery_GET_validation,
 } = require("./../../../../validations/auth/recovery/trusted_email/trusted_email.validations");
+
+const giveAccess = require("./../../../../helpers/giveAccess");
 
 //===========================================================================
 // (2) Send an email to a previously trusted assigned email
@@ -110,7 +113,7 @@ const generateTrustedEmail_POST_service = async ({ req, res, next }) => {
   if (userTrustedEmail === email) {
     return res.status(422).json({
       name: "Invalid Input",
-      description: "Your given email is exactly as our saved one.",
+      description: "Your given email is exactly as your old saved one.",
     });
   }
 
@@ -164,9 +167,9 @@ const generateTrustedEmail_POST_service = async ({ req, res, next }) => {
 };
 
 // (3) verify and enable (GET)
-const disableTrustedEmail_DELETE_service = async ({ req, res, next }) => {
+const verifyEnableTrustedEmail_GET_service = async ({ req, res, next }) => {
   // (1) Get token from request
-  const { token } = disableTrustedEmail_DELETE_validation({ req, res, next });
+  const { token } = verifyEnableTrustedEmail_GET_validation({ req, res, next });
 
   // (2) Check if token is valid and not expired
   const decodedTrustedEmailToken = await verify_token({
@@ -192,6 +195,7 @@ const disableTrustedEmail_DELETE_service = async ({ req, res, next }) => {
     }
   );
 
+  console.log("Result: ", decodedTrustedEmailToken._id);
   // (2) Get user from DB
   const user = await User.findById(decodedTrustedEmailToken._id).select({
     "account.recovery.methodTwo": 1,
@@ -254,12 +258,11 @@ const disableTrustedEmail_DELETE_service = async ({ req, res, next }) => {
     url: req.url,
     description:
       "Congrats, you have enabled this account recovery method (Trusted email) successfully.",
-    user,
   });
 };
 
 // (4) Disable (DELETE)
-const verifyEnableTrustedEmail_GET_service = async ({ req, res, next }) => {
+const disableTrustedEmail_DELETE_service = async ({ req, res, next }) => {
   // (1) Get userId from previous middleware
   const userId = req.userId;
 
@@ -330,7 +333,11 @@ const sendEmail_during_recovery_POST_servicer = async ({ req, res, next }) => {
   }
 
   // (3) Generate a token for trusted email verification
-  const recovery_token = await create_trusted_email_verification_token(user.id);
+  const recovery_token = await create_token({
+    id: user.id,
+    secret: process.env.EMAIL_VERIFICATION_TOKEN_SECRET,
+    expiresIn: process.env.EMAIL_VERIFICATION_TOKEN_SECRET_EXPIRES_IN,
+  });
 
   // (4) Update user document
   user.account.recovery.methodTwo.recovery_token = recovery_token;
@@ -339,22 +346,21 @@ const sendEmail_during_recovery_POST_servicer = async ({ req, res, next }) => {
   await user.save();
 
   // (6) Setup email
-  const recoveryUrl = `${req.protocol}://${process.env.HOST}:${process.env.PORT}/api/v1/auth//account-recovery/trusted-email/verify-during-recovery/${recovery_token}`;
+  const recoveryUrl = `${req.protocol}://${process.env.HOST}:${process.env.PORT}/api/v1/auth/account-recovery/trusted-email/verify-during-recovery/${recovery_token}`;
   const message = `Hello, there. \nClick to recover your account, ${recoveryUrl}, you only have ${process.env.TRUSTED_EMAIL_VERIFICATION_TOKEN_SECRET_EXPIRES_IN}`;
 
   // (7) Send email
-  // TODO: await sendEmail({
-  //   email,
-  //   subject: "Trusted Email verification link",
-  //   message,
-  // });
+  TODO: await sendEmail({
+    email,
+    subject: "Trusted Email verification link",
+    message,
+  });
   console.log("Verification url: ", recoveryUrl);
 
   //(8) Inform frontend with the status.
   res.status(200).json({
     name: "Success",
     description: "Email sent to your trusted email mailbox successfully",
-    user,
   });
 };
 
@@ -364,9 +370,10 @@ const verify_during_recovery_GET_service = async ({ req, res, next }) => {
   const { token } = verify_during_recovery_GET_validation({ req, res, next });
 
   // (2) Decode the token
-  const decoded_token = await verify_trusted_email_verification_token(
-    token
-  ).catch(
+  const decoded_token = await verify_token({
+    token,
+    secret: process.env.EMAIL_VERIFICATION_TOKEN_SECRET,
+  }).catch(
     // If there is error
     (error) => {
       //  (1) If token is manipulated

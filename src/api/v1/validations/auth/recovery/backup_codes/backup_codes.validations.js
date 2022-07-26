@@ -1,12 +1,12 @@
 const confirmBackupCodes_GET_validation = ({ req, res, next }) => {
   // (1) Get user data from request
-  const { userId } = req.query;
+  const { userId } = req.params;
 
   // (2) If userId not found
   if (!userId) {
     return res.status(404).json({
       name: "ID Not Found",
-      description: "Sorry, we can't find the ID in the request parameters",
+      description: "Sorry, we can't find the ID in the request parameters.",
     });
   }
 
@@ -18,13 +18,13 @@ const confirmBackupCodes_GET_validation = ({ req, res, next }) => {
 
 const confirmBackupCodes_POST_validation = ({ req, res, next }) => {
   // (1) Get user data from request
-  const { userId } = req.body || req.query;
+  const { userId } = req.params;
 
   // (2) If userId not found
   if (!userId) {
     return res.status(404).json({
       name: "ID Not Found",
-      description: "Sorry, we can't find the ID in the request. bla bla bla",
+      description: "Sorry, we can't find the ID in the request parameters.",
     });
   }
 
@@ -90,5 +90,5 @@ module.exports = {
   confirmBackupCodes_GET_validation,
   confirmBackupCodes_POST_validation,
   regenerateBackupCodes_POST_validation,
-  verifyBackupCodes_POST_validation
+  verifyBackupCodes_POST_validation,
 };

@@ -4,8 +4,7 @@
   "description": "An API using Node.js/ Express.js and mongoDB/ mongoose",
   "main": "./src/server.js",
   "scripts": {
-    "start:dev": "NODE_ENV=development NODE_PATH=src/ nodemon server.js",
-    "start:prod": "NODE_ENV=production nodemon server.js"
+    "start": "NODE_ENV=development NODE_PATH=src/ nodemon server.js"
   },
   "repository": {
     "type": "git",

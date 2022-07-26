@@ -10,6 +10,7 @@ const cors = require("cors");
 //===================================================
 
 module.exports = third_party_middleware = ({ express, app }) => {
+
   // Enable CORS
   app.use(cors());
 

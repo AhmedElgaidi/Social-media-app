@@ -1,6 +1,23 @@
-const { TokenExpiredError } = require("jsonwebtoken");
-
 const disableTrustedEmail_DELETE_validation = ({ req, res, next }) => {
+  // (1) Get user data from request
+  const { token } = req.params;
+
+  // (2) If token is not found
+  if (!token) {
+    return res.status(404).json({
+      name: "Token Not Found",
+      description:
+        "Sorry, we can't find the verification token in the request.",
+    });
+  }
+
+  // (3) Pass data to the service function
+  return {
+    token,
+  };
+};
+
+const verifyEnableTrustedEmail_GET_validation = ({ req, res, next }) => {
   // (1) Get user data from request
   const { token } = req.params;
 
@@ -39,7 +56,7 @@ const sendEmail_during_recovery_POST_validation = ({ req, res, next }) => {
 
 const verify_during_recovery_GET_validation = ({ req, res, next }) => {
   // (1) Get user data from request
-  const { token } = req.body;
+  const { token } = req.params;
 
   // (2) If not found
   if (!token) {
@@ -57,6 +74,7 @@ const verify_during_recovery_GET_validation = ({ req, res, next }) => {
 
 module.exports = {
   disableTrustedEmail_DELETE_validation,
+  verifyEnableTrustedEmail_GET_validation,
   sendEmail_during_recovery_POST_validation,
   verify_during_recovery_GET_validation,
 };

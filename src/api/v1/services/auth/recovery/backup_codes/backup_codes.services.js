@@ -10,7 +10,7 @@ const {
   confirmBackupCodes_GET_validation,
   confirmBackupCodes_POST_validation,
   regenerateBackupCodes_POST_validation,
-  verifyBackupCodes_POST_validation
+  verifyBackupCodes_POST_validation,
 } = require("./../../../../validations/auth/recovery/backup_codes/backup_codes.validations");
 
 //====================================================================
@@ -118,9 +118,7 @@ const generateBackupCodes_POST_service = async ({ req, res, next }) => {
   // (8) Redirect him to page so, he can see his generated temp_codes and confirm them
   res
     .status(301)
-    .redirect(
-      `/api/v1/auth/account-recovery/backup-codes/confirm/?userId=${user.id}`
-    );
+    .redirect("/api/v1/auth/account-recovery/backup-codes/confirm/" + user.id);
 };
 
 // (3) Disable backup code (DELETE)
@@ -172,7 +170,6 @@ const confirmBackupCodes_GET_service = async ({ req, res, next }) => {
   const user = await User.findById(userId).select({
     "account.recovery.methodOne": 1,
   });
-  // .catch(err => res.send(err));
 
   // If user not found
   if (!user) {
@@ -195,7 +192,7 @@ const confirmBackupCodes_GET_service = async ({ req, res, next }) => {
     });
   }
 
-  res.json({
+  res.status(200).json({
     url: req.url,
     generated_codes: user.account.recovery.methodOne.temp_codes,
   });
@@ -321,9 +318,7 @@ const regenerateBackupCodes_POST_service = async ({ req, res, next }) => {
   // (7) Redirect him to the confirm code endpoint
   res
     .status(301)
-    .redirect(
-      `/api/v1/auth/account-recovery/backup-codes/confirm?userId=${user.id}`
-    );
+    .redirect("/api/v1/auth/account-recovery/backup-codes/confirm/" + user.id);
 };
 
 // (8) Verify backup codes (GET)
@@ -334,10 +329,6 @@ const verifyBackupCodes_GET_service = ({ req, res, next }) => {
       "The page where you enter one of the previously given backup codes. So, you can have access and recover your account.",
   });
 };
-
-// @route POST api/bla/bla
-// @desc Verify backup code
-// @access
 
 // (9) Verify backup codes (POST)
 const verifyBackupCodes_POST_service = async ({ req, res, next }) => {

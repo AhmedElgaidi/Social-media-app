@@ -29,7 +29,7 @@ router
   .delete(protect, is_account_active, disableBackupCodes_DELETE_controller);
 
 router
-  .route("/backup-codes/confirm")
+  .route("/backup-codes/confirm/:userId")
   .get(confirmBackupCodes_GET_controller)
   .post(confirmBackupCodes_POST_controller);
 
