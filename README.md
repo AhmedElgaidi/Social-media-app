@@ -54,12 +54,28 @@
 - **Result:** User recieves email verification account.
 
 #### 3) Login Account: (Note: User can create as many session as he wants and can control them all in an easy way)
-- **For: ** After user verifies his given email, we redirect him to the login page, so he can get a sesion (access + refresh token).
-- **Requirments: ** Just email and password.
-- **Result: ** User gets access token (valid for 15min.) and refresh token (valid for 1 day) to access any private endpoint.
+- **For:** After user verifies his given email, we redirect him to the login page, so he can get a sesion (access + refresh token).
+- **Requirments:** Just email and password.
+- **Result:** User gets access token (valid for 15min.) and refresh token (valid for 1 day) to access any private endpoint.
 
 #### 4) Logout:
-- **For: ** The user can log out from our system whenever he wants.
-- **Requirments: ** Just a valid access token (or at least a valid refresh token that brings him valid access token).
-- **Result: ** We invalidates the session tokens.
+- **For:** The user can log out from our system whenever he wants.
+- **Requirments:** Just a valid access token (or at least a valid refresh token that brings him valid access token).
+- **Result:** We invalidates the session tokens.
 
+#### 5) Deactivate Account:
+- **For:** The user can deactivate his account as much as he wants.
+- **Requirments:** Just a valid access token (or at least a valid refresh token that brings him valid access token).
+- **Result:** He access our private resources anymore (he needs to activate his account first).
+
+#### (6) Activate account:
+- **For:** After user decativates his account, at some point he/ she needs to activate it again.
+- **Requirments:** Valid email and password and we would send him an activation link in an email to his primary email mailbox.
+- **Result:** The user can acccess our private resources as much as he wants.
+
+#### (7) Delete Account:
+- **For:** If user wants to delete his account from our system permanantly.
+- **Requirments:** Just a valid access token (or at least a valid refresh token that brings him valid access token).
+- **Result:** If he wants to access our private resources again, he cant activate his account but needs to sign up from the scratch again (Just new process).
+
+#### (8) 
