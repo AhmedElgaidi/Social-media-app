@@ -105,4 +105,26 @@
 ### Security Layer (1): TOTP (Time-Based One-Time-Password) as 2FA 
 **(There are 4 securiy layers, the user can only enable one of them or all of them together in addtion to his email and password on every "Really new" login attempt)**
 #### (14) Generate TOTP:
-- For: 
+- **For:** One user asks for enabling this feature, we send him a secret. So, he/ she can use it in any authenticating app as googl authenticator app etc... and gets a 6 digits code valid only for 30 seconds in return.
+- **Requirments:** Just a valid access token (or at least a valid refresh token that brings him valid access token).
+- **Result:** Started the process of enabling TOTP to his account (Getting more secure).
+
+#### (15) Scan TOTP:
+- **For:** We offer two options for delivering the user the secret (just the secret, qrcode to scan) both for his authenticating app.
+- **Requirments:** Just a valid access token (or at least a valid refresh token that brings him valid access token).
+- **Result:** Finished the second step in the TOTP enabling.
+
+#### (16) Verify TOTP during setup:
+- **For:** We need to verify one time the secret during the setup (verify the 6 digits code returned from authenticating app).
+- **Requirments:** Just a valid access token (or at least a valid refresh token that brings him valid access token) + valid 6 digits code.
+- **Result:** If it's valid, then this feature is enabled successfully.
+
+#### (17) Disable TOTP:
+- **For:** The user can disable this feaute whenever he wants.
+- **Requirments:** Just a valid access token (or at least a valid refresh token that brings him valid access token).
+- **Result:** the TOTP is disabled and the account is less secure now.
+
+#### (18) Verify TOTP during login:
+- **For:** If user is enabling this feature, he would be asked to give us the 6 digits code from the same authenticating app that he should saved the secret in it before.
+- **Requirments:** Just valid credentials + valid 6 digits code.
+- **Result:** Access to his account unless he is enabling other security layers.
