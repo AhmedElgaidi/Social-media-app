@@ -216,3 +216,43 @@
 - **For:** The user can know the status (enabled/ disabled) of each layer/ method in his account.
 - **Requirments:** Just a valid access token (or at least a valid refresh token that brings him valid access token).
 - **Result:** More control over his account security options.
+
+
+### Account Recovery options:
+**(If the user can't log in with his credentials and can't use his enabled 2fa methods, he still can recover and get access to his account and then our private resources)**
+**To enable any recoveyr option, the user has to enable at least 2 options/ methods of 2FA methods**
+#### Method (2): 10 back up codes 
+#### (35) Show backup codes:
+- For: The use can know the status(enabled/ disabled) of this feature and see the 10 backup codes and which one is used and which isn't etc...
+- **Requirments:** Just a valid access token (or at least a valid refresh token that brings him valid access token) + this feature should be enabled.
+- Result: More control over his account security.
+
+#### (36) Enable:
+- For: The user can ask for enabling this feature and we return him 10 temporary 12-digits codes
+- **Requirments:** Just a valid access token (or at least a valid refresh token that brings him valid access token).
+- Result: 10 temporary 12 digits codes (Finished first step).
+
+
+#### (37) Regenerate Temporary Codes:
+- For: The user can regenerate a new 10 codes whenever he wants(he lost them, compromised, used all of them, etc...).
+- **Requirments:** Just a valid access token (or at least a valid refresh token that brings him valid access token).
+- Result: Finsihed he second step in the process of enabling backup codes recovery method.
+
+#### (38) confirm and enableTemporary codes:
+- For: After showing the user the 10 codes he has to confirm that he saved/ download them.
+- **Requirments:** Just a valid access token (or at least a valid refresh token that brings him valid access token).
+- Result: The Thirdand last step for enabling this recovery option.
+
+#### (39) Disable: 
+- For: The user can disable this feature whenever he wants.
+- **Requirments:** Just a valid access token (or at least a valid refresh token that brings him valid access token).
+- Result: This feature is disabled and the account is less risky to be lost.
+
+#### (40) Verify during recovery:
+- For: IF user can't login with his credentials or there is somehting wrong with the 2FA methods, he can send his one of the 10 backup codes and we give him access again and then he can change whatever he wants in his accoutn settings.
+- Requirments: Just Bad luck :)
+- Result: Recover his account.
+
+### Method (2): Trusted/ secondary email
+
+#### (41) 
