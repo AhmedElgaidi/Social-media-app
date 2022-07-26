@@ -78,4 +78,19 @@
 - **Requirments:** Just a valid access token (or at least a valid refresh token that brings him valid access token).
 - **Result:** If he wants to access our private resources again, he cant activate his account but needs to sign up from the scratch again (Just new process).
 
-#### (8) 
+#### (8) Change Password:
+- **For:** The user can change his password whenever he wants.
+- **Requirments:** Just a valid access token (or at least a valid refresh token that brings him valid access token). + old password, new password, confirm passwrd.
+- **Result:** His passowrd gets updated.
+
+#### (9) Forget Passowrd:
+- **For:** If user forgot his password and only remeber his email, he/ she can recover his account again easily.
+- **Requirments:** Just a correct email in our DB and access to his mailbox (So, he can recieve our emails).
+- **Result:** Can access his account whatever happened.
+
+#### (10) Reset Password:
+- **For:** Once user clicks on the email sent to his mailbox,  we verifiy it and make him/ her create a new password.
+- **Requirments:** Just access to his primary mailbox.
+- **Result:** Direct access to his account and our private resources.
+
+#### (11) 
