@@ -3,7 +3,7 @@
 
 ### Project Links:
 - [Live API on Heroku](https://social-app-260.herokuapp.com/)
-- [API postman documentation](https://www.getpostman.com/collections/010c1090e2dfafab270c)
+- [API postman documentation](https://documenter.getpostman.com/view/8694181/UzXM1yep#c559612b-3c64-481a-a03f-c7b7560646ee)
 
 ### Personal project goals:
 - Learn how to document a project (e.g. API).

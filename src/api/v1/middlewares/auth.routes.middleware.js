@@ -60,7 +60,8 @@ module.exports = routes_middleware = (app) => {
   app.use("/", (req, res, next) => {
     res.status(200).json({
       message: "Welcome to my social media API.",
-      description: "This is an advanced authentication API with many security features.",
+      description:
+        "This is an advanced authentication API with many security features.",
       creator: {
         name: "Ahmed Elgaidi",
         contacts: {
@@ -71,7 +72,7 @@ module.exports = routes_middleware = (app) => {
       API: {
         source_code: "https://github.com/AhmedElgaidi/Social-media-app",
         API_documentation:
-          "https://www.getpostman.com/collections/010c1090e2dfafab270c",
+          "https://documenter.getpostman.com/view/8694181/UzXM1yep#c559612b-3c64-481a-a03f-c7b7560646ee",
       },
     });
   });
