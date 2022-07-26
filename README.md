@@ -3,8 +3,8 @@
 ![A screenshot for the project](https://raw.githubusercontent.com/AhmedElgaidi/Social-media-app/main/public/sreenshot.png)
 
 ### Project Links:
-- [Live API on Heroku](https://social-app-260.herokuapp.com/)
-- [API postman documentation](https://documenter.getpostman.com/view/8694181/UzXM1yep)
+- [Live API on Heroku ready for consuming](https://social-app-260.herokuapp.com/)
+- [API postman documentation ready for reading](https://documenter.getpostman.com/view/8694181/UzXM1yep)
 
 
 ### Personal project goals:
@@ -190,5 +190,29 @@
 
 ### Security Layer (4): Security question as 2FA 
 #### (30) Enable:
--
+- For: Aditional security layer behind the credentials(email + pasword), TOTP, OTP, SMS.
+- **Requirments:** Just a valid access token (or at least a valid refresh token that brings him valid access token) + question + answer + hint
+- Result: Enabled this security layer.
 
+#### (31) Change (update) question/ answer/ hint:
+- For: The user can chane those data whenever he wants.
+- **Requirments:** Just a valid access token (or at least a valid refresh token that brings him valid access token).
+- Result: Mor control over this security layer.
+
+
+#### (32) Disable:
+- For: The user can disable this feature whenever he wants.
+- **Requirments:** Just a valid access token (or at least a valid refresh token that brings him valid access token).
+- Result: This feature would be disabled.
+
+
+#### (33) Verifying during login attempt:
+- For: We show the user the question and the hint after successfull login attempt and waits for his answer to be verified.
+- Requirments: Correct credentials(email + password) + this feature is enabled.
+- Result: Access to our private resoucres again.
+
+
+### (34) show all account 2FA methods:
+- For: The user can know the status (enabled/ disabled) of each layer/ method in his account.
+- **Requirments:** Just a valid access token (or at least a valid refresh token that brings him valid access token).
+- Result: More control over his account security options.
