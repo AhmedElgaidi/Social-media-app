@@ -100,4 +100,7 @@
 ##### (13) cancel session/ Revoke tokens:
 - **For:** The user can to cancel any sesssion for any reason (expired, lost, compromised, etc...).
 - **Requirments:** Just a valid access token (or at least a valid refresh token that brings him valid access token).
-- *8Result:** More control over his account active sessions.
+- **Result:** More control over his account active sessions.
+
+### Security Layer (1): TOTP (Time-Based One-Time-Password)
+#### (14) test
