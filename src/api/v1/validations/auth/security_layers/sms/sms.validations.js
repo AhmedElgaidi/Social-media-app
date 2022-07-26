@@ -75,8 +75,9 @@ const generateSendSMS_duringLogin_POST_validation = ({ req, res, next }) => {
 
 const verifySMS_duringLogin_POST_validation = ({ req, res, next }) => {
   // (1) Get user data from request
-  const { userId, code } = req.body;
-
+  const { code } = req.body,
+    { userId } = req.params;
+    
   // (2) Validate the inputs
   // If UserId not found
   if (!userId) {
@@ -111,7 +112,7 @@ const verifySMS_duringLogin_POST_validation = ({ req, res, next }) => {
 
 const resendSMS_during_login_POST_validation = ({ req, res, next }) => {
   // (1) Get user data from request
-  const { userId } = req.body;
+  const { userId } = req.params;
 
   // (2) If not found
   if (!userId) {

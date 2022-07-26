@@ -62,11 +62,11 @@ const two_faSchema = new Schema({
       type: String,
       minlength: [
         5,
-        "Please, provide us with a longer answer (5-10 characters) ",
+        "Please, provide us with a longer answer (5-20 characters) ",
       ],
       maxlength: [
-        10,
-        "Please, provide us with a shorter answer (5-10 characters) ",
+        20,
+        "Please, provide us with a shorter answer (5-20 characters) ",
       ],
       trim: true,
     },
@@ -74,11 +74,11 @@ const two_faSchema = new Schema({
       type: String,
       minlength: [
         5,
-        "Please, provide us with a longer hint (5-50 characters) ",
+        "Please, provide us with a longer hint (5-100 characters) ",
       ],
       maxlength: [
-        50,
-        "Please, provide us with a shorter hint (5-50 characters) ",
+        100,
+        "Please, provide us with a shorter hint (5-100 characters) ",
       ],
       trim: true,
     },

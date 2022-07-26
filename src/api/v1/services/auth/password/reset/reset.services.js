@@ -9,17 +9,16 @@ const {
 //========================================================================
 
 const resetPassword_GET_service = ({ req, res, next }) => {
-  // /reset-password/token/userId
-  res.send(
-    "This is where you enter your new password (last step in the process)"
-  );
+  res.status(200).json({
+    name: "Success",
+    description: "This is where you enter your new password",
+  });
 };
 
 const resetPassword_POST_service = async ({ req, res, next }) => {
   // (1) Get new passwords and password reset token from request
   const {
-    token: passwordResetToken,
-    userId,
+    token,
     password,
     confirm_password,
   } = resetPassword_POST_validation({ req, res, next });
@@ -46,7 +45,7 @@ const resetPassword_POST_service = async ({ req, res, next }) => {
 
   // (3) Check token and ID in DB
   const user = await User.findOne({
-    "account.reset.password_reset_token": passwordResetToken,
+    "account.reset.password_reset_token": token,
   }).select({
     "account.reset": 1,
     "account.password": 1,
@@ -60,13 +59,6 @@ const resetPassword_POST_service = async ({ req, res, next }) => {
     });
   }
 
-  // IF user is found and really has this token, but his id doesn't match
-  if (user && user.id !== userId) {
-    return res.status(422).json({
-      status: "Invalid Input",
-      description: "The given token and ID don't match!!!!",
-    });
-  }
 
   // Now, everything is okay. So, we can establish the new password
 

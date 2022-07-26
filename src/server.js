@@ -2,27 +2,17 @@
 
 // Our modules
 require("dotenv").config({ path: "config.env" }); // to import our variables
-const app = require("./app");
-const mongoose = require("mongoose");
+
+const connect_to_MongoDB = require("./config/database.config");
+
 const {
   logError,
   isOperationalError,
 } = require(`./api/v1/errors/errorHandler`);
 
 //================================================================================================
-
-app.listen(process.env.PORT || 8000, () => {
-  mongoose
-    .connect(process.env.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    })
-    .then(() => {
-      console.log(
-        `Server is running on https://localhost:${process.env.PORT} (${process.env.NODE_ENV} environment)`
-      );
-    });
-});
+// Connect to MongoDB server
+connect_to_MongoDB();
 
 //================================================================================================
 // let's handle our unhandled promise rejection (globally) by using event listeners

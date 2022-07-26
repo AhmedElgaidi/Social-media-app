@@ -11,9 +11,11 @@ const {
 // During setup:
 // (1)
 const enable_question_GET_service = ({ req, res, next }) => {
-  res.send(
-    "The page where the user sends from it his security question and answer."
-  );
+  res.status(200).json({
+    name: "Success",
+    description:
+      "The page where the user writes his his security question, answer and hint.",
+  });
 };
 
 // (2)
@@ -162,11 +164,17 @@ const disable_question_DELETE_service = async ({ req, res, next }) => {
 
 // During login:
 // (5)
-const verify_question_during_login_GET_service = ({ req, res, next }) => {
+const verify_question_during_login_GET_service = async ({ req, res, next }) => {
+  const user = await User.findById(req.params.userId).select({
+    "account.two_fa.question": 1,
+  });
+
   res.status(200).json({
     url: req.url,
     description:
       "The page where the user sees the security question and the hint and sends us his answer for identity verification.",
+    question: user.account.two_fa.question.value,
+    hint: user.account.two_fa.question.hint,
   });
 };
 

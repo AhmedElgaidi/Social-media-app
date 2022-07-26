@@ -1,6 +1,6 @@
 const resetPassword_POST_validation = ({ req, res, next }) => {
   // (1) Get new passwords and password reset token from request
-  const { token, userId } = req.params,
+  const { token } = req.params,
     { password, confirm_password } = req.body;
 
   // (2) Check for user data existence
@@ -10,14 +10,6 @@ const resetPassword_POST_validation = ({ req, res, next }) => {
     return res.status(404).json({
       status: "Not Found",
       description: "Sorry, we can't fiend the token in the request parameters.",
-    });
-  }
-
-  // If user id is not found
-  if (!userId) {
-    return res.status(404).json({
-      status: "Not Found",
-      description: "Sorry, we can't find the ID in the request parameters.",
     });
   }
 
@@ -50,7 +42,6 @@ const resetPassword_POST_validation = ({ req, res, next }) => {
   // (4) Pass user data to the service function
   return {
     token,
-    userId,
     password,
     confirm_password,
   };

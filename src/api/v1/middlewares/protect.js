@@ -1,5 +1,8 @@
 const User = require("../models/user/User");
-const { verify_access_token } = require("../helpers/tokens/accessToken");
+
+const { verify_token } = require("../helpers/token");
+
+//==========================================================
 
 const protect = async (req, res, next) => {
   // (1) Get access token
@@ -17,7 +20,10 @@ const protect = async (req, res, next) => {
   }
 
   // (3) verify access token
-  const decodedAccessToken = await verify_access_token(access_token).catch(
+  const decodedAccessToken = await verify_token({
+    token: access_token,
+    secret: process.env.ACCESS_TOKEN_SECRET,
+  }).catch(
     // Errors in the access token verification:
     (error) => {
       // (1) if user manipulated the token
@@ -27,7 +33,7 @@ const protect = async (req, res, next) => {
           description: "Sorry, your access token is manipulated!!",
         });
       }
-      
+
       // (2) if access token is expired
       res.status(401).json({
         name: "Invalid Token",

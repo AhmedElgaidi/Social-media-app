@@ -2,7 +2,7 @@ const User = require("./../../../../models/user/User");
 
 // =============================================================
 
-const deleteAccount_DELETE_service = async (req, res, next) => {
+const deleteAccount_DELETE_service = async ({ req, res, next }) => {
   // (1) Get userId from protect middleware
   const userId = req.userId;
 

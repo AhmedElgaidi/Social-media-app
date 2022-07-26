@@ -1,6 +1,7 @@
 const verifyOTP_POST_validation = ({ req, res, next }) => {
   // (1) Get user data from request
-  const { userId, otp } = req.body;
+  const { otp } = req.body,
+    { userId } = req.params;
 
   // (2) Check for their existence
   // If ID is not found
@@ -54,5 +55,5 @@ const re_generate_send_OTP_POST_validation = ({ req, res, next }) => {
 
 module.exports = {
   verifyOTP_POST_validation,
-  re_generate_send_OTP_POST_validation
+  re_generate_send_OTP_POST_validation,
 };

@@ -60,7 +60,7 @@ const signup_POST_validation = ({ req, res, next }) => {
   }
 
   // (3) password and confirm password fields don't match
-  if (password.toString() !== confirm_password) {
+  if (password.toString() !== confirm_password.toString()) {
     return res.status(422).json({
       name: "Invalid Input",
       description:

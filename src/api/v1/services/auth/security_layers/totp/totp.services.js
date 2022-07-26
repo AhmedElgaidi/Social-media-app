@@ -5,8 +5,10 @@ const speakeasy = require("speakeasy");
 const {
   scanTOTP_qrCode_GET_validation,
   verifyTOTP_during_setup_POST_validation,
-  verifyTOTP_during_login_POST_validation
+  verifyTOTP_during_login_POST_validation,
 } = require("./../../../../validations/auth/security_layers/totp/totp.validations");
+
+const giveAccess = require("./../../../../helpers/giveAccess");
 
 //========================================================================
 const all2faMethods_GET_service = async ({ req, res, next }) => {
@@ -76,17 +78,17 @@ const scanTOTP_qrCode_GET_service = async ({ req, res, next }) => {
     url: req.url,
     "QR code": qrcode,
     description:
-      "The front end should use this secret and create a qrcode for user to scan!!!",
+      "The front end should use this secret and create a qrcode for user to scan it!!!",
   });
 };
 
 // (3) Verify TOTP during setup
 const VerifyTOTP_during_setup_GET_service = async ({ req, res, next }) => {
-  res
-    .status(200)
-    .send(
-      "The page where you enter the code generated from you authenticator app."
-    );
+  res.status(200).send({
+    name: "Success",
+    description:
+      "The page where the user enters the code generated from his authenticator app during setup.",
+  });
 };
 
 const verifyTOTP_during_setup_POST_service = async ({ req, res, next }) => {
@@ -201,28 +203,11 @@ const verifyTOTP_during_login_GET_service = async ({ req, res, next }) => {
 
 const verifyTOTP_during_login_POST_service = async ({ req, res, next }) => {
   // (1) Get TOTP token
-  const { userId, token } = verifyTOTP_during_login_POST_validation({
+  const { userId, code } = verifyTOTP_during_login_POST_validation({
     req,
     res,
     next,
   });
-
-  // If token is not found
-  if (!token) {
-    return res.status(404).json({
-      name: "Not Found",
-      description:
-        "Please, send your token generated from your authenticator app!!",
-    });
-  }
-
-  // If userId is not found
-  if (!userId) {
-    return res.status(404).json({
-      name: "Not Found",
-      description: "Please, send your ID!!",
-    });
-  }
 
   // (2) Get user document from DB
   const user = await User.findById(userId).select({
@@ -243,7 +228,7 @@ const verifyTOTP_during_login_POST_service = async ({ req, res, next }) => {
   const isVerified = speakeasy.totp.verify({
     secret: user.account.two_fa.totp.secret,
     encoding: "base32",
-    token,
+    token: code,
   });
 
   // If verification failed
@@ -255,6 +240,7 @@ const verifyTOTP_during_login_POST_service = async ({ req, res, next }) => {
   }
 
   // (4) If there are any other security layers enabled (only remains OTP, SMS and the security question)
+  
   // Method (2) OTP
   const is_otp_enabled = user.account.two_fa.otp.is_enabled;
 

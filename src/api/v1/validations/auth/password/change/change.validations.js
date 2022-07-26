@@ -1,6 +1,7 @@
 const changePassword_POST_validation = ({ req, res, next }) => {
   // (1) Get user data from request
-  const { old_password, password, confirm_password } = req.body;
+  const { old_password, password, confirm_password } = req.body,
+    userId = req.userId;
 
   // (2) check there existence
 
@@ -44,6 +45,7 @@ const changePassword_POST_validation = ({ req, res, next }) => {
     old_password,
     password,
     confirm_password,
+    userId,
   };
 };
 

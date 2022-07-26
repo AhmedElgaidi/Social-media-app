@@ -10,7 +10,7 @@ const {
 const router = express.Router();
 
 router
-  .route("/reset-password/:token/:userId")
+  .route("/reset-password/:token")
   .get(resetPassword_GET_controller)
   .post(resetPassword_POST_controller);
 

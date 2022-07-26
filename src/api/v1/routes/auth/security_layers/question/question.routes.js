@@ -29,7 +29,7 @@ router
   .delete(protect, is_account_active, disable_question_DELETE_controller);
 
 router
-  .route("/security-question/verify")
+  .route("/security-question/verify/:userId")
   .get(verify_question_during_login_GET_controller)
   .post(verify_question_during_login_POST_controller);
 

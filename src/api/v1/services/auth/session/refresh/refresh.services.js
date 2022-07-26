@@ -10,12 +10,12 @@ const {
 
 const refreshToken_POST_service = async ({ req, res, next }) => {
   // (1) Get refresh token
-  const refresh_token = refreshToken_POST_validation({ req, res, next });
+  const {refresh_token} = refreshToken_POST_validation({ req, res, next });
 
   // (3) verify refresh token
   const decodedRefreshToken = await verify_token({
     token: refresh_token,
-    secret: process.env.ACCESS_TOKEN,
+    secret: process.env.REFRESH_TOKEN_SECRET,
   }).catch(
     // Errors in refresh token verification:
     (error) => {

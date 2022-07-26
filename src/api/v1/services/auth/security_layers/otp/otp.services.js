@@ -14,14 +14,6 @@ const {
 // method (2): Email him OTP code  (One-Time Password)
 
 // (1) Enable
-const generateSendOTP_GET_service = ({ req, res, next }) => {
-  res
-    .status(200)
-    .send(
-      "A page with a button to click to generate an OTP code and be sent to you."
-    );
-};
-
 const generateSendOTP_POST_service = async ({ req, res, next }) => {
   // (1) Get userId from previous middleware
   const userId = req.userId;
@@ -69,7 +61,7 @@ const generateSendOTP_POST_service = async ({ req, res, next }) => {
   });
 
   // (7) Redirect him to a page to verify this received otp code
-  res.status(301).redirect("/api/v1/auth/2fa/otp/verify");
+  res.status(301).redirect("/api/v1/auth/2fa/otp/verify" + user.id);
 };
 
 // (2) Verify
@@ -99,7 +91,7 @@ const verifyOTP_POST_service = async ({ req, res, next }) => {
     });
   }
 
-  // (3) Check if user has this token
+  // (3) Check if user really has this token field
   const otp_found = user.account.two_fa.otp.value;
 
   // If otp is not found in DB
@@ -133,6 +125,8 @@ const verifyOTP_POST_service = async ({ req, res, next }) => {
 
     // (2) Save it in DB
     await user.save();
+
+    // (3) Inform him with the status
     return res.status(422).json({
       name: "Invalid Input",
       description:
@@ -209,7 +203,6 @@ const disableOTP_DELETE_service = async ({ req, res, next }) => {
     name: "Success",
     description:
       "You disabled a 2fa method (OTP) successfully (Keep in mind, you are less secure now!!).",
-    user,
   });
 };
 
@@ -281,7 +274,6 @@ const re_generate_send_OTP_POST_service = async ({ req, res, next }) => {
 //=======================================================================
 
 module.exports = {
-  generateSendOTP_GET_service,
   generateSendOTP_POST_service,
   disableOTP_DELETE_service,
   verifyOTP_GET_service,

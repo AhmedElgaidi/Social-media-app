@@ -2,14 +2,12 @@ const User = require("./../../../../models/user/User");
 
 const twilio = require("twilio");
 
-const is_phone_code_match = require("./../../../../helpers/is_phone_code_match");
-
 const {
   generateSendSMS_POST_validation,
   verifySMS_duringSetup_POST_validation,
   generateSendSMS_duringLogin_POST_validation,
   verifySMS_duringLogin_POST_validation,
-  resendSMS_during_login_POST_validation
+  resendSMS_during_login_POST_validation,
 } = require("./../../../../validations/auth/security_layers/sms/sms.validations");
 const compare_hash = require("../../../../helpers/compare_hash");
 
@@ -18,11 +16,11 @@ const compare_hash = require("../../../../helpers/compare_hash");
 // method (3): Text message (send code as sms)
 // During setup:
 const smsPage_during_setup_GET_service = ({ req, res, next }) => {
-  res
-    .status(200)
-    .send(
-      "The page where you enter phone number and start to setup your sms as 2fa method."
-    );
+  res.status(200).json({
+    name: "Success",
+    description:
+      "The page where the user enters his phone number and starts to setup your sms as 2fa method.",
+  });
 };
 
 const generateSendSMS_POST_service = async ({ req, res, next }) => {
@@ -338,7 +336,7 @@ const generateSendSMS_duringLogin_POST_service = async ({ req, res, next }) => {
   // });
 
   // (9) Redirect him. So he can verify the sent code!
-  res.status(301).redirect("/api/v1/auth/2fa/sms/verify");
+  res.status(301).redirect("/api/v1/auth/2fa/sms/verify/" + user.id);
 };
 
 const verifySMS_duringLogin_GET_service = ({ req, res, next }) => {
@@ -394,10 +392,7 @@ const verifySMS_duringLogin_POST_service = async ({ req, res, next }) => {
   }
 
   // (5) Check for code validity
-  const is_code_same = await compare_hash(
-    code,
-    user.account.two_fa.sms.value
-  );
+  const is_code_same = await compare_hash(code, user.account.two_fa.sms.value);
 
   // If not same
   if (!is_code_same) {

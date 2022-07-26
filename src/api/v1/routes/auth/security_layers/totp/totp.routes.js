@@ -37,7 +37,7 @@ router
   .post(protect, is_account_active, verifyTOTP_during_setup_POST_controller);
 
 router
-  .route("/totp/verify-during-login")
+  .route("/totp/verify-during-login/:userId")
   .get(verifyTOTP_during_login_GET_controller)
   .post(verifyTOTP_during_login_POST_controller);
 

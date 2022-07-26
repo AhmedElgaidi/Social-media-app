@@ -48,10 +48,10 @@ router
   .post(generateSendSMS_duringLogin_POST_controller);
 
 router
-  .route("/sms/verify")
+  .route("/sms/verify/:userId")
   .get(verifySMS_duringLogin_GET_controller)
   .post(verifySMS_duringLogin_POST_controller);
 
-router.route("/sms/resend").post(resendSMS_during_login_POST_controller);
+router.route("/sms/resend/:userId").post(resendSMS_during_login_POST_controller);
 
 module.exports = router;

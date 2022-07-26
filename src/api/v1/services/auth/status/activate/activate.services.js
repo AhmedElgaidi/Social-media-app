@@ -10,12 +10,12 @@ const {
 
 const activateAccount_POST_service = async ({ req, res, next }) => {
   // (1) Get account activation token from request
-  const token = activateAccount_POST_validation({ req, res, next });
+  const { token } = activateAccount_POST_validation({ req, res, next });
 
   // (2) Validate token and check it's expiration date
   await verify_token({
     token,
-    expiresIn: process.env.ACCOUNT_ACTIVATION_TOKEN_SECRET_EXPIRES_IN,
+    secret: process.env.ACCOUNT_ACTIVATION_TOKEN_SECRET,
   }).catch((error) => {
     // (1) if user manipulated the token
     if (error.toString().includes("invalid signature")) {

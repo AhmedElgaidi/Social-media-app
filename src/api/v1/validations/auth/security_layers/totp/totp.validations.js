@@ -37,8 +37,9 @@ const verifyTOTP_during_setup_POST_validation = ({ req, res, next }) => {
 
 const verifyTOTP_during_login_POST_validation = ({ req, res, next }) => {
   // (1) Get user data from request
-  const { userId, token } = req.body;
-
+  const { code } = req.body,
+    { userId } = req.params;
+    
   // (2) Check for their existence
   // If userId is not found
   if (!userId) {
@@ -49,7 +50,7 @@ const verifyTOTP_during_login_POST_validation = ({ req, res, next }) => {
   }
 
   // If token is not found
-  if (!token) {
+  if (!code) {
     res.status(404).json({
       name: "Not Found",
       description:
@@ -60,7 +61,7 @@ const verifyTOTP_during_login_POST_validation = ({ req, res, next }) => {
   // (3) Pass user data to the service function
   return {
     userId,
-    token,
+    code,
   };
 };
 

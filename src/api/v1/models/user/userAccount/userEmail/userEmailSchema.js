@@ -34,12 +34,11 @@ const userEmailSchema = new Schema({
 // ==================================================
 // Our mongoose middlewares
 
-// Assign the time of user changing his email status from secondary to primary and vice versa
 userEmailSchema.pre("save", async function (next) {
-  // If there is no modification in the is_secondary field, then do nothing
-  if (!this.isModified("is_secondary")) return next();
+  // If there is no modification in the is_verified field, then do nothing
+  if (!this.isModified("is_verified")) return next();
 
-  this.is_changed_at = Date.now();
+  this.is_verified_at = Date.now();
   next();
 });
 

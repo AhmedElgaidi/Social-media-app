@@ -10,9 +10,8 @@ const {
 
 const changePassword_POST_service = async ({ req, res, next }) => {
   // (1) Get userId and user data from request
-  const { old_password, password, confirm_password } = 
+  const { old_password, password, confirm_password, userId } =
     changePassword_POST_validation({ req, res, next });
-  const userId = req.userId;
 
   // (2) Get user document
   const user = await User.findById(userId).select({

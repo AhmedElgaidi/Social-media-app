@@ -11,7 +11,11 @@ const {
 //=================================================================
 
 const forgetPassword_GET_service = ({ req, res, next }) => {
-  res.status(200).send("Welcome to forget password page...");
+  res.status(200).json({
+    name: "Success",
+    description:
+      "Welcome to forget password page.\n Please, send us your email so you can create new password.",
+  });
 };
 
 const forgetPassword_POST_service = async ({ req, res, next }) => {
@@ -32,6 +36,8 @@ const forgetPassword_POST_service = async ({ req, res, next }) => {
     });
   }
 
+  // If everything is okay. Then,
+
   // (3) Create password reset token
   const passwordResetToken = await create_token({
     id: user.id,
@@ -46,15 +52,15 @@ const forgetPassword_POST_service = async ({ req, res, next }) => {
   await user.save({ validateBeforeSave: false });
 
   // (6) Setup activation link
-  const passwordResetUrl = `${req.protocol}://${process.env.HOST}:${process.env.PORT}/api/v1/auth/reset-password/${passwordResetToken}/${user.id}`;
+  const passwordResetUrl = `${req.protocol}://${process.env.HOST}:${process.env.PORT}/api/v1/auth/reset-password/${passwordResetToken}`;
   const message = `Click to Reset your account, ${passwordResetUrl}, you only have ${process.env.PASSWORD_RESET_TOKEN_SECRET_EXPIRES_IN}. If you didn't asked for reset, then ignore this email.`;
 
   // (7) Send the activation link to user
-  // await sendEmail({
-  //   email,
-  //   subject: "Password Reset Link",
-  //   message,
-  // });
+  await sendEmail({
+    email,
+    subject: "Password Reset Link",
+    message,
+  });
   TODO: console.log(passwordResetUrl);
 
   // (8) Inform the front-end with the status

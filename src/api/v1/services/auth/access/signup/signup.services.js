@@ -14,7 +14,7 @@ const signup_GET_service = ({ req, res, next }) => {
   return res.json({
     name: "Success",
     message:
-      "Please, type your first name, last name, user name, email, password and click the signup button",
+      "Welcome!! \nPlease, type your first name, last name, user name, email, password and click the signup button",
   });
 };
 
@@ -58,7 +58,7 @@ const signup_POST_service = async ({ req, res, next }) => {
   const verificationToken = await create_token({
     id: user.id,
     secret: process.env.EMAIL_VERIFICATION_TOKEN_SECRET,
-    expiresIn: EMAIL_VERIFICATION_TOKEN_SECRET_EXPIRES_IN,
+    expiresIn: process.env.EMAIL_VERIFICATION_TOKEN_SECRET_EXPIRES_IN,
   });
 
   user.account.email.verification_token = verificationToken;
@@ -69,7 +69,7 @@ const signup_POST_service = async ({ req, res, next }) => {
   // (5) Setup and send the verification email to user
   const verificationUrl = `${req.protocol}://${process.env.HOST}:${process.env.PORT}/api/v1/auth/verify-email/${verificationToken}`;
   const message = `Click to verify your email, ${verificationUrl}, you only have ${process.env.EMAIL_VERIFICATION_TOKEN_SECRET_EXPIRES_IN}`;
-  // TODO: await sendEmail({ email, subject: "Email verification link", message });
+  TODO: await sendEmail({ email, subject: "Email verification link", message });
   console.log(verificationUrl);
 
   // (6) Inform the front-end about the status
@@ -77,9 +77,6 @@ const signup_POST_service = async ({ req, res, next }) => {
     status: "Success",
     message:
       "User created successfully, check your mail box to verify your account",
-    data: {
-      user,
-    },
   });
 };
 
