@@ -92,12 +92,12 @@
 - **Requirments:** Just a valid refresh token.
 - **Result:** Access to our private resources again.
 
-##### (12) Show All active sessions:
+#### (12) Show All active sessions:
 - **For:** This endpoint tells the user how many session are active and information about each one. So, he can cancel any of them as he want.
 - **Requirments:** Just a valid access token (or at least a valid refresh token that brings him valid access token).
 - **Result:** Can show and controll over all his account session by using his current sesssion (device).
 
-##### (13) cancel session/ Revoke tokens:
+#### (13) cancel session/ Revoke tokens:
 - **For:** The user can to cancel any sesssion for any reason (expired, lost, compromised, etc...).
 - **Requirments:** Just a valid access token (or at least a valid refresh token that brings him valid access token).
 - **Result:** More control over his account active sessions.
