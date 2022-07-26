@@ -152,4 +152,43 @@
 
 
 ### Security Layer (3): SMS (6 digits code over sms message) as 2FA 
-#### (23)
+#### (23) Enable SMS:
+-  For: Aditional security layer besides (correct credential, TOTP, OTP) layers.
+- **Requirments:** Just a valid access token (or at least a valid refresh token that brings him valid access token) + valid phone number.
+- Result: started the sms as 2fa process.
+
+#### (24) Verify phone number:
+- For: For verifing the given phone number, by sending him a trial 6 digits code and wait for them.
+- Requirments: Just access to a valid phone number.
+- Result: If the code sent to him is same as the given one and not expired then the user finished the second step successfully.
+
+#### (25) Resend Message:
+- For: If the 6 digits code get expired, the user can ask for new ones durin the setup
+- Requirments: Access to a valid phone number and expired 6 digits code.
+- Result: We send him again a new code, so, he can continue the enabling process.
+
+#### (26) Disable SMS:
+- For: The user can disable this feature whenever he wants.
+- **Requirments:** Just a valid access token (or at least a valid refresh token that brings him valid access token).
+- Result: The feature is disabled.
+
+#### (27) Send SMS Code during login:
+- For: After user has enabled this feature, now we send him a 6 digits code on every new login attempt in order to authenticate him.
+- Requirments: Correct credentials(email, password) + This feature is enabled to his account.
+- Result: The user recieves a 6 digits codes to prove his identity.
+
+
+ُُ#### (28) Verify SMS Code during login:
+- For: After user reciveve the 6 digits code to his phone number, he needs to send them back to use to verify them. 
+- Requirments: Correct credentials + this feature is enabled + access to phone.
+- Result: The user can complete his logn attempt.
+
+#### (29) Resend SMS during login:
+- For: If the sent 6 digits code during login attempt is expired, the user can ask for new one.
+- Requirments: Correct credentials(email+ password) + enabling this feature + access to phone number + already expired code.
+- Resutlt: Access to our private resources.
+
+### Security Layer (4): Security question as 2FA 
+#### (30) Enable:
+-
+
