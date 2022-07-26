@@ -102,6 +102,7 @@
 - **Requirments:** Just a valid access token (or at least a valid refresh token that brings him valid access token).
 - **Result:** More control over his account active sessions.
 
-### Security Layer (1): TOTP (Time-Based One-Time-Password) as 2FA (There are 4 securiy layers, the user can only enable one of them or all of them together in addtion to his email and password on every "Really new" login attempt)
+### Security Layer (1): TOTP (Time-Based One-Time-Password) as 2FA 
+**(There are 4 securiy layers, the user can only enable one of them or all of them together in addtion to his email and password on every "Really new" login attempt)**
 #### (14) Generate TOTP:
 - For: 
