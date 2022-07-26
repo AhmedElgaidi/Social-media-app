@@ -57,13 +57,12 @@ module.exports = routes_middleware = (app) => {
   ]);
 
   // Home route
-  app.use(
-    "/",
+  app.use("/", (req, res, next) => {
     res.status(200).json({
       status: "Success",
       message: "Welcome to my authentication API | By: Ahmed Elgaidi",
-    })
-  );
+    });
+  });
 
   // 404 handler
   app.all("*", (req, res, next) => {
