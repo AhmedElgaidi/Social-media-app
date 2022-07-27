@@ -59,7 +59,7 @@ module.exports = routes_middleware = (app) => {
   // Home route
   app.use("/", (req, res, next) => {
     res.status(200).json({
-      message: "Welcome to my social media API.",
+      message: "Welcome to my social media authenticating API.",
       description:
         "This is an advanced authentication API with many security features.",
       creator: {
