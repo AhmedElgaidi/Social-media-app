@@ -339,3 +339,4 @@
 - **For:** After the user clicks on the link sent to the mailbox of his secondary (trusted) email, we verify it and if everything is okay, we give him access to our private resoucrs and can change whateverr he wants in the account settings.
 - **Requirments:** Only access to mailbox of seconary email.
 - **Result:** More account recovery methods => less being risk to be lost.
+- 
